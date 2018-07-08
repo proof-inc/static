@@ -5,11 +5,11 @@
 // Initialize Firebase
 firebase.initializeApp({
   apiKey: DASHBOARD_API_KEY,
-  authDomain: AUTH_DOMAIN,
-  databaseURL: DB_URL,
-  projectId: PROJECT_ID,
-  storageBucket: STORAGE_BUCKET,
-  messagingSenderId: MESSENGER_SENDING_ID
+  authDomain: DASHBOARD_AUTH_DOMAIN,
+  databaseURL: DASHBOARD_DB_URL,
+  projectId: DASHBOARD_PROJECT_ID,
+  storageBucket: DASHBOARD_STORAGE_BUCKET,
+  messagingSenderId: DASHBOARD_MESSAGING_SENDER_ID
 });
 
 // TODO: capitalise?
