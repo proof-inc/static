@@ -59,7 +59,7 @@ $(window).on("load", function() {
     }
 
     catch (e) {
-
+      showError('', e.message)
     }
   });
 
