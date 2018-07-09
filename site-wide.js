@@ -55,6 +55,10 @@ function getEmail() {
   return localStorage.getItem('email');
 }
 
+function getName() {
+  return localStorage.getItem('name');
+}
+
 function isAuthenticated() {
   // Check whether the current time is past the
   // Access Token's expiry time
