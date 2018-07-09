@@ -31,11 +31,8 @@ $(window).on("load", function() {
   // do the following only if we are logged in using Auth0
 	handleAuthentication(login, function() {
 
-    // hide loading screen
-    $("#dashboard-loading-overlay").remove();
-
     //
-    // IDENTITY INFO
+    // IDENTITY & VARIABLES
     //
   	var userId = getUserId();
     var userIdHash = getUserIdHash();
@@ -43,178 +40,266 @@ $(window).on("load", function() {
     var email = localStorage.getItem('email'); // not every account comes with email...
     var loginTimestamp = (+ new Date());
 
-    //
-    // MANUALLY BIND TEMPLATE
-    //
+    var db = firebase.database();
+    var investors = db.ref('investors');
+  	var thisInvestor = db.ref('investors').child(userIdHash);
 
-    var kycNoticeSrc = $('#kyc-notice a')
-    	.attr('href')
-      .replace("{{USER_ID}}", userIdHash)
-      .replace("{{USER_EMAIL}}", email)
-      ;
+    // try to login and catch errors
+    registerAuthenticationErrorListener();
 
-  	$('#welcome-name').html(name);
-    $('#kyc-notice a').attr('href', kycNoticeSrc);
+    // listen to event of being (anonymously) authenticated
+    // as soon as we are, we register ourselves
+    registerAuthenticationStatusListener();
+
+    // bind some template vars
+    bindTemplateData();
 
     //
     // DB HANDLERS
     //
 
-    var db = firebase.database();
-    var investors = db.ref('investors');
-  	var thisInvestor = db.ref('investors').child(userIdHash);
-
-  	// init investor entry
-  	thisInvestor.once('value', function(snapshot) {
-      var exists = (snapshot.val() !== null);
-
-      // TODO: move to private webhook
-      if (!exists) {
-      	console.log("initialized entry for investor: " + userIdHash);
-      	thisInvestor.set({
-        	kycDone: false,
-          euroInvested: 0,
-          logins: [loginTimestamp]
-        });
-      }
-
-      // register last seen
-      else {
-        thisInvestor.child("logins").push(loginTimestamp);
-      }
-    });
-
   	// listen to changes on the euro invested field
-  	db.ref('investors/' + userIdHash + '/euroInvested').on('value', function(snapshot) {
-      updateInvestorEuroInvested(snapshot.val());
-    });
+  	registerInvestorInvestmentUpdates();
 
     // listen to changes on the euro invested field
-  	// db.ref('stats/euroInvested').on('value', function(snapshot) {
-    // 	TOTAL_TOKENS_SOLD = euroToTokenAmount(snapshot.val());
-    //   updateTotalEuroInvested(snapshot.val());
-    // }, function(error) {console.error(error)});
-
-    // listen to changes on the euro invested field
-  	db.ref('investors').on('value', function(snapshot) {
-      var totalEuroInvested = 0;
-      snapshot.forEach(function(snapshot){
-        totalEuroInvested += snapshot.val().euroInvested;
-      });
-      updateTotalEuroInvested(totalEuroInvested);
-    }, function(error) {console.error(error)});
+  	registerTotalInvestmentUpdates();
 
     //
     // CREATE UI ELEMENTS
     //
 
-  	//
-    var tokenShareBar = new ProgressBar.SemiCircle('#progress-share-percentage', {
-      strokeWidth: strokeWidth,
-      color: '#FFEA82',
-      trailColor: backgroundColor,
-      trailWidth: 25,
-      easing: 'easeInOut',
-      duration: 1400,
-      svgStyle: null,
-      text: {
-        value: '',
-        alignToBottom: false
-      },
-      from: {color: emptyColor},
-      to: {color: fullColor},
-      // Set default step function for all animate calls
-      step: (state, bar) => {
-        bar.path.setAttribute('stroke', state.color);
-        var value = Math.round(bar.value() * 100);
-        if (value > 1) {
-          bar.setText(value);
-        }
-        else {
-          bar.setText(0);
-        }
-
-        bar.text.style.color = state.color;
-      }
-    });
-    tokenShareBar.text.style.fontFamily = barTextFont;
-    tokenShareBar.text.style.fontSize = '2rem';
+  	// token share stats
+    var tokenShareBar = createTokenShareBar();
 
     // token supply stats
-    var tokenSupplyBar = new ProgressBar.Line('#token-supply-left-progress', {
-      strokeWidth: strokeWidth,
-      easing: 'easeInOut',
-      duration: 1400,
-      color: '#F8BC3F',
-      trailColor: '#eee',
-      trailWidth: 1,
-      svgStyle: {width: '100%', height: '100%'},
-      text: {
-        style: {
-          color: '#333',
-          //position: 'absolute',
-          //right: '0',
-          //top: '50px',
-          "text-align": "center",
-          padding: 0,
-          margin: '-25px',
-          "font-size": "50px",
-          "font-weight": "bold",
-          transform: null
-        },
-        autoStyleContainer: false
-      },
-      from: {color: emptyColor},
-      to: {color: fullColor},
-      step: (state, bar) => {
-        bar.setText(Math.round(bar.value() * 100) + ' %');
-        bar.path.setAttribute('stroke', state.color);
-      }
-    });
-
-    tokenSupplyBar.text.style.fontFamily = barTextFont;
-
-    //
-    // CALCULATE THE TOKEN RETURN FOR A SPECIFIC DONATION HEIGHT
-    //
+    var tokenSupplyBar = createTokenSupplyBar();
 
     // TODO: max aanpassen wanneer nieuwe investeringen gedaan worden
-    $("#investment-slider").ionRangeSlider({
-      min: 1000,
-      step: 5000,
-      grid: true,
-      max: tokensSaleAvailable()/4,
-      from: sliderMinInvestment,
-      prefix: '€',
+    createInvestmentCalcSlider();
+    createSaleProgressCalcSlider();
+    registerManualInvestmentAmountListener();
 
-      onChange: function (data) {
-        sliderMinInvestment = data.from;
-        updateTokensToReceive();
-      },
-    });
-
-    $("#sale-phase-slider").ionRangeSlider({
-      min: 0,
-      max: 100,
-      from: sliderSalePhase,
-
-      onChange: function (data) {
-        sliderSalePhase = data.from;
-        updateTokensToReceive();
-      },
-    });
-
-    //
-		$("#investment-manual-amount").change(function(){
-    	sliderMinInvestment = $(this).val();
-      $("#investment-slider")
-      	.data("ionRangeSlider")
-        .update({from: sliderMinInvestment});
-      updateTokensToReceive();
-    });
+    // init ui
+    updateTokensToReceive();
 
     // back to login prompt
-		$("#log-out").click(logoutAndPrompt);
+		registerLogoutListener();
+
+    //
+    // LISTENERS
+    //
+
+    function registerLogoutListener() {
+      $("#log-out").click(logoutAndPrompt);
+    }
+
+    function registerManualInvestmentAmountListener() {
+      $("#investment-manual-amount").change(function(){
+      	sliderMinInvestment = $(this).val();
+        $("#investment-slider")
+        	.data("ionRangeSlider")
+          .update({from: sliderMinInvestment});
+        updateTokensToReceive();
+      });
+    }
+
+    function registerAuthenticationErrorListener() {
+      firebase.auth().signInAnonymously().catch(function(error) {
+        $("#dashboard-overlay-error-code").text(error.code);
+        $("#dashboard-overlay-error-message").text(error.message);
+        $("#dashboard-error-overlay").removeClass("hidden");
+      });
+    }
+
+    function registerAuthenticationStatusListener() {
+      firebase.auth().onAuthStateChanged(function(user)
+      {
+        // User is signed in.
+        if (user) {
+
+          var isAnonymous = user.isAnonymous;
+          var uid = user.uid;
+
+          // hide loading screen
+          hideLoadingScreen();
+
+          // init investor entry
+          registerInvestorLoggedIn();
+
+        // User is signed out.
+        } else {
+
+        }
+      });
+    }
+
+    function registerInvestorInvestmentUpdates() {
+      db.ref('investors/' + userIdHash + '/euroInvested').on('value', function(snapshot) {
+        updateInvestorEuroInvested(snapshot.val());
+      });
+    }
+
+    function registerTotalInvestmentUpdates() {
+      db.ref('investors').on('value', function(snapshot) {
+        var totalEuroInvested = 0;
+        snapshot.forEach(function(snapshot){
+          totalEuroInvested += snapshot.val().euroInvested;
+        });
+        updateTotalEuroInvested(totalEuroInvested);
+      }, function(error) {console.error(error)});
+    }
+
+    //
+    // UI factories
+    //
+
+    function createSaleProgressCalcSlider() {
+      $("#sale-phase-slider").ionRangeSlider({
+        min: 0,
+        max: 100,
+        from: sliderSalePhase,
+
+        onChange: function (data) {
+          sliderSalePhase = data.from;
+          updateTokensToReceive();
+        },
+      });
+    }
+
+    function createInvestmentCalcSlider() {
+      $("#investment-slider").ionRangeSlider({
+        min: 1000,
+        step: 5000,
+        grid: true,
+        max: tokensSaleAvailable()/4,
+        from: sliderMinInvestment,
+        prefix: '€',
+
+        onChange: function (data) {
+          sliderMinInvestment = data.from;
+          updateTokensToReceive();
+        },
+      });
+    }
+
+    function barBaseOptions() {
+      return {
+        strokeWidth: strokeWidth,
+        trailColor: backgroundColor,
+        trailWidth: 25,
+        easing: 'easeInOut',
+        duration: 1400,
+        svgStyle: null,
+        text: {
+          style: {
+            fontFamily: barTextFont,
+            fontSize: '2rem'
+          }
+        }
+      }
+    }
+
+    function createTokenShareBar() {
+      return new ProgressBar.SemiCircle('#progress-share-percentage', $.merge(true, barBaseOptions(), {
+        color: '#FFEA82',
+        text: {
+          value: '',
+          alignToBottom: false
+        },
+        from: {color: emptyColor},
+        to: {color: fullColor},
+
+        // Set default step function for all animate calls
+        step: (state, bar) => {
+          bar.path.setAttribute('stroke', state.color);
+          var value = Math.round(bar.value() * 100);
+          if (value > 1) {
+            bar.setText(value);
+          }
+          else {
+            bar.setText(0);
+          }
+
+          bar.text.style.color = state.color;
+        }
+      }));
+    }
+
+    function createTokenSupplyBar() {
+      return new ProgressBar.Line('#token-supply-left-progress', $.merge(true, barBaseOptions(), {
+        color: '#F8BC3F',
+        trailColor: 'fff',
+        svgStyle: {width: '100%', height: '100%'},
+        text: {
+          style: {
+            color: '#333',
+            //position: 'absolute',
+            //right: '0',
+            //top: '50px',
+            "text-align": "center",
+            padding: 0,
+            margin: '-25px',
+            "font-size": "50px",
+            "font-weight": "bold",
+            transform: null,
+          },
+          autoStyleContainer: false
+        },
+        from: {color: emptyColor},
+        to: {color: fullColor},
+        step: (state, bar) => {
+          bar.setText(Math.round(bar.value() * 100) + ' %');
+          bar.path.setAttribute('stroke', state.color);
+        }
+      }));
+    }
+
+    function registerInvestorLoggedIn() {
+      thisInvestor.once('value', function(snapshot) {
+        var exists = (snapshot.val() !== null);
+
+        // TODO: move to private webhook
+        if (!exists) {
+        	console.log("initialized entry for investor: " + userIdHash);
+        	thisInvestor.set({
+          	kycDone: false,
+            euroInvested: 0,
+            logins: [loginTimestamp]
+          });
+        }
+
+        // register last seen
+        else {
+          thisInvestor.child("logins").push(loginTimestamp);
+        }
+      });
+    }
+
+    function bindWelcomeName() {
+      $('#welcome-name').html(name);
+    }
+
+    function bindKYCFormEmail() {
+      var kycLink = $('#kyc-notice a');
+      kycLink.attr('href', kycLink
+      	.attr('href')
+        .replace("{{USER_ID}}", getUserIdHash())
+        .replace("{{USER_EMAIL}}", getEmail())
+      );
+    }
+
+    function bindTemplateData() {
+      bindWelcomeName();
+      bindKYCFormEmail();
+    }
+
+    function initUI() {
+
+    }
+
+    function hideLoadingScreen() {
+      $("#dashboard-loading-overlay").remove();
+    }
 
     function updateTokensToReceive() {
       var baseTokenCount = euroToTokenAmount(sliderMinInvestment);
@@ -268,8 +353,6 @@ $(window).on("load", function() {
       var tokenBonus = tokenBonusAmount(tokenAmount);
       var totalTokenAmount = tokenAmount + tokenBonus;
       tokenShareBar.animate(shareModifier);
-      // $('#balance-total').text(tokenAmount);
-      // $('#bonus-total').text(tokenBonus);
       $('#balance-total').animateNumber({ number: tokenAmount });
       $('#bonus-total').animateNumber({ number: tokenBonus });
     }
@@ -283,11 +366,6 @@ $(window).on("load", function() {
 		function euroToTokenAmount(euroAmount) {
     	return euroAmount * 4;
     }
-
-		// init states
-		//tokenShareBar.animate(0.01);
-    //tokenSupplyBar.animate(1.0);
-    updateTokensToReceive();
   });
 
 });

@@ -51,6 +51,10 @@ function getUserIdHash() {
   return getUserId().hashCode();
 }
 
+function getEmail() {
+  return localStorage.getItem('email');
+}
+
 function isAuthenticated() {
   // Check whether the current time is past the
   // Access Token's expiry time
