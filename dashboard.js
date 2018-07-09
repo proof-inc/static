@@ -32,7 +32,7 @@ $(function() {
 	handleAuthentication(login, function() {
 
     // hide loading screen
-    $("#dashboard-loading-overlay").hide();
+    $("#dashboard-loading-overlay").remove();
 
     //
     // IDENTITY INFO
