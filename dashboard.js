@@ -207,7 +207,7 @@ function barBaseOptions() {
 }
 
 function createTokenShareBar() {
-  return new ProgressBar.SemiCircle('#progress-share-percentage', $.merge(true, barBaseOptions(), {
+  return new ProgressBar.SemiCircle('#progress-share-percentage', $.extend(true, barBaseOptions(), {
     color: '#FFEA82',
     text: {
       value: '',
@@ -233,7 +233,7 @@ function createTokenShareBar() {
 }
 
 function createTokenSupplyBar() {
-  return new ProgressBar.Line('#token-supply-left-progress', $.merge(true, barBaseOptions(), {
+  return new ProgressBar.Line('#token-supply-left-progress', $.extend(true, barBaseOptions(), {
     color: '#F8BC3F',
     trailColor: 'fff',
     svgStyle: {width: '100%', height: '100%'},
