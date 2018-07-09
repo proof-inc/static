@@ -268,8 +268,10 @@ $(window).on("load", function() {
       var tokenBonus = tokenBonusAmount(tokenAmount);
       var totalTokenAmount = tokenAmount + tokenBonus;
       tokenShareBar.animate(shareModifier);
-      $('#balance-total').text(tokenAmount);
-      $('#bonus-total').text(tokenBonus);
+      // $('#balance-total').text(tokenAmount);
+      // $('#bonus-total').text(tokenBonus);
+      $('#balance-total').animateNumber({ number: tokenAmount });
+      $('#bonus-total').animateNumber({ number: tokenBonus });
     }
 
     function updateTotalEuroInvested(amount) {
