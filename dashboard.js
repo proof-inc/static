@@ -34,11 +34,6 @@ var name = getName();
 var email = getEmail(); // not every account comes with email...
 var loginTimestamp = (+ new Date());
 
-//  db shortcuts
-var db = firebase.database();
-var investors = db.ref('investors');
-var thisInvestor = db.ref('investors').child(userIdHash);
-
 //
 // CREATE UI
 //
@@ -94,6 +89,22 @@ function bootstrapDashboard()
   registerTotalInvestmentUpdates();
 }
 
+function db() {
+  return firebase.database();
+}
+
+function dbAuth() {
+  return firebase.auth();
+}
+
+function dbInvestors() {
+  return db().ref('investors');
+}
+
+function dbThisInvestor() {
+  return dbInvestors().child(getUserIdHash());
+}
+
 //
 // LISTENERS
 //
@@ -113,13 +124,13 @@ function registerManualInvestmentAmountListener() {
 }
 
 function registerAuthenticationErrorListener() {
-  firebase.auth().signInAnonymously().catch(function(error) {
+  dbAuth().signInAnonymously().catch(function(error) {
     showError(error.code, error.message);
   });
 }
 
 function registerAuthenticationStatusListener() {
-  firebase.auth().onAuthStateChanged(function(user)
+  dbAuth().onAuthStateChanged(function(user)
   {
     // User is signed in.
     if (user) {
@@ -141,13 +152,13 @@ function registerAuthenticationStatusListener() {
 }
 
 function registerInvestorInvestmentUpdates() {
-  db.ref('investors/' + userIdHash + '/euroInvested').on('value', function(snapshot) {
+  db().ref('investors/' + userIdHash + '/euroInvested').on('value', function(snapshot) {
     updateInvestorEuroInvested(snapshot.val());
   });
 }
 
 function registerTotalInvestmentUpdates() {
-  db.ref('investors').on('value', function(snapshot) {
+  dbInvestors().on('value', function(snapshot) {
     var totalEuroInvested = 0;
     snapshot.forEach(function(snapshot){
       totalEuroInvested += snapshot.val().euroInvested;
@@ -262,13 +273,13 @@ function createTokenSupplyBar() {
 }
 
 function registerInvestorLoggedIn() {
-  thisInvestor.once('value', function(snapshot) {
+  dbThisInvestor().once('value', function(snapshot) {
     var exists = (snapshot.val() !== null);
 
     // TODO: move to private webhook
     if (!exists) {
       console.log("initialized entry for investor: " + userIdHash);
-      thisInvestor.set({
+      dbThisInvestor().set({
         kycDone: false,
         euroInvested: 0,
         logins: [loginTimestamp]
@@ -277,7 +288,9 @@ function registerInvestorLoggedIn() {
 
     // register last seen
     else {
-      thisInvestor.child("logins").push(loginTimestamp);
+      dbThisInvestor()
+        .child("logins")
+        .push(loginTimestamp);
     }
   });
 }
