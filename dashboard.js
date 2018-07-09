@@ -25,8 +25,8 @@ firebase.initializeApp({
   messagingSenderId: DASHBOARD_MESSAGING_SENDER_ID
 });
 
-// on document ready
-$(function() {
+// when all scripts have loaded
+$(window).load(function() {
 
   // do the following only if we are logged in using Auth0
 	handleAuthentication(login, function() {
@@ -41,6 +41,7 @@ $(function() {
     var userIdHash = getUserIdHash();
     var name = localStorage.getItem('name');
     var email = localStorage.getItem('email'); // not every account comes with email...
+    var loginTimestamp = (+ new Date());
 
     //
     // MANUALLY BIND TEMPLATE
@@ -66,12 +67,20 @@ $(function() {
   	// init investor entry
   	thisInvestor.once('value', function(snapshot) {
       var exists = (snapshot.val() !== null);
+
+      // TODO: move to private webhook
       if (!exists) {
       	console.log("initialized entry for investor: " + userIdHash);
       	thisInvestor.set({
         	kycDone: false,
-          euroInvested: 0
+          euroInvested: 0,
+          logins: [loginTimestamp]
         });
+      }
+
+      // register last seen
+      else {
+        thisInvestor.child("logins").push(loginTimestamp);
       }
     });
 
