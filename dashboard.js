@@ -25,18 +25,6 @@ firebase.initializeApp({
   messagingSenderId: DASHBOARD_MESSAGING_SENDER_ID
 });
 
-// TODO: vervangen met echt unieke Auth0 id
-String.prototype.hashCode = function(){
-  var hash = 0;
-  if (this.length == 0) return hash;
-  for (i = 0; i < this.length; i++) {
-    char = this.charCodeAt(i);
-    hash = ((hash<<5)-hash)+char;
-    hash = hash & hash; // Convert to 32bit integer
-  }
-  return hash;
-}
-
 // on document ready
 $(function() {
 
@@ -46,10 +34,10 @@ $(function() {
     //
     // IDENTITY INFO
     //
-  	var userId = localStorage.getItem('user_id');
+  	var userId = getUserId();
+    var userIdHash = getUserIdHash();
     var name = localStorage.getItem('name');
     var email = localStorage.getItem('email'); // not every account comes with email...
-  	var userIdHash = userId.hashCode();
 
     //
     // MANUALLY BIND TEMPLATE

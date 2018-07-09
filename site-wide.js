@@ -43,6 +43,14 @@ function logout(onLogout) {
   }
 }
 
+function getUserId() {
+  return localStorage.getItem('user_id');
+}
+
+function getUserIdHash() {
+  return getUserId().hashCode();
+}
+
 function isAuthenticated() {
   // Check whether the current time is past the
   // Access Token's expiry time
@@ -76,4 +84,16 @@ function handleAuthentication(onFail, onSuccess) {
     	onFail();
     }
   });
+}
+
+// TODO: vervangen met veilige hash
+String.prototype.hashCode = function(){
+  var hash = 0;
+  if (this.length == 0) return hash;
+  for (i = 0; i < this.length; i++) {
+    char = this.charCodeAt(i);
+    hash = ((hash<<5)-hash)+char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return hash;
 }
