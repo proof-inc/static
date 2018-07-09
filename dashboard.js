@@ -2,16 +2,6 @@
 // CONFIG & INIT
 //
 
-// Initialize Firebase
-firebase.initializeApp({
-  apiKey: DASHBOARD_API_KEY,
-  authDomain: DASHBOARD_AUTH_DOMAIN,
-  databaseURL: DASHBOARD_DB_URL,
-  projectId: DASHBOARD_PROJECT_ID,
-  storageBucket: DASHBOARD_STORAGE_BUCKET,
-  messagingSenderId: DASHBOARD_MESSAGING_SENDER_ID
-});
-
 // TODO: capitalise?
 var sliderMinInvestment = 1000;
 var sliderSalePhase = 0;
@@ -24,6 +14,16 @@ const barTextFont = '"Raleway", Helvetica, sans-serif';
 
 const BASE_TOKEN_AMOUNT = 120 * 1000000;
 var TOTAL_TOKENS_SOLD = 0;
+
+// Initialize Firebase
+firebase.initializeApp({
+  apiKey: DASHBOARD_API_KEY,
+  authDomain: DASHBOARD_AUTH_DOMAIN,
+  databaseURL: DASHBOARD_DB_URL,
+  projectId: DASHBOARD_PROJECT_ID,
+  storageBucket: DASHBOARD_STORAGE_BUCKET,
+  messagingSenderId: DASHBOARD_MESSAGING_SENDER_ID
+});
 
 // TODO: vervangen met echt unieke Auth0 id
 String.prototype.hashCode = function(){
@@ -43,27 +43,40 @@ $(function() {
   // do the following only if we are logged in using Auth0
 	handleAuthentication(login, function() {
 
-  	var email = localStorage.getItem('email');
+    //
+    // IDENTITY INFO
+    //
+  	var userId = localStorage.getItem('user_id');
     var name = localStorage.getItem('name');
-  	var emailHash = email.hashCode();
+    var email = localStorage.getItem('email'); // not every account comes with email...
+  	var userIdHash = userId.hashCode();
 
-  	var db = firebase.database();
-    var investors = db.ref('investors');
-  	var thisInvestor = db.ref('investors').child(emailHash);
+    //
+    // MANUALLY BIND TEMPLATE
+    //
 
     var kycNoticeSrc = $('#kyc-notice a')
     	.attr('href')
-      .replace("{{INVESTOR_EMAIL}}", email)
-      .replace("{{IDENTIFICATION_CODE}}", emailHash);
+      .replace("{{USER_ID}}", userIdHash)
+      .replace("{{USER_EMAIL}}", email)
+      ;
 
   	$('#welcome-name').html(name);
     $('#kyc-notice a').attr('href', kycNoticeSrc);
+
+    //
+    // DB HANDLERS
+    //
+
+    var db = firebase.database();
+    var investors = db.ref('investors');
+  	var thisInvestor = db.ref('investors').child(userIdHash);
 
   	// init investor entry
   	thisInvestor.once('value', function(snapshot) {
       var exists = (snapshot.val() !== null);
       if (!exists) {
-      	console.log("initialized entry for investor: " + email);
+      	console.log("initialized entry for investor: " + userIdHash);
       	thisInvestor.set({
         	kycDone: false,
           euroInvested: 0
@@ -72,17 +85,19 @@ $(function() {
     });
 
   	// listen to changes on the euro invested field
-  	db.ref('investors/' + emailHash + '/euroInvested').on('value', function(snapshot) {
-      //alert("investor amount changed!");
+  	db.ref('investors/' + userIdHash + '/euroInvested').on('value', function(snapshot) {
       updateInvestorEuroInvested(snapshot.val());
     });
 
     // listen to changes on the euro invested field
   	db.ref('stats/euroInvested').on('value', function(snapshot) {
-    	//alert("euroinvested changed!");
     	TOTAL_TOKENS_SOLD = euroToTokenAmount(snapshot.val());
       updateTotalEuroInvested(snapshot.val());
     }, function(error) {console.error(error);});
+
+    //
+    // CREATE UI ELEMENTS
+    //
 
   	//
     var tokenShareBar = new ProgressBar.SemiCircle('#progress-share-percentage', {
@@ -150,7 +165,10 @@ $(function() {
 
     tokenSupplyBar.text.style.fontFamily = barTextFont;
 
-    // sliders
+    //
+    // CALCULATE THE TOKEN RETURN FOR A SPECIFIC DONATION HEIGHT
+    //
+
     // TODO: max aanpassen wanneer nieuwe investeringen gedaan worden
     $("#investment-slider").ionRangeSlider({
       min: 1000,
@@ -177,6 +195,7 @@ $(function() {
       },
     });
 
+    //
 		$("#investment-manual-amount").change(function(){
     	sliderMinInvestment = $(this).val();
       $("#investment-slider")
@@ -185,7 +204,8 @@ $(function() {
       updateTokensToReceive();
     });
 
-		$("#log-out").click(logout);
+    // back to login prompt
+		$("#log-out").click(logoutAndPrompt);
 
     function updateTokensToReceive() {
       var baseTokenCount = euroToTokenAmount(sliderMinInvestment);

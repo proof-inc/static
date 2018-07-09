@@ -27,6 +27,10 @@ function login() {
 	webAuth.authorize();
 }
 
+function logoutAndPrompt() {
+  logout(login);
+}
+
 function logout(onLogout) {
   // Remove tokens and expiry time from localStorage
   localStorage.removeItem('access_token');
