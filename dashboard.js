@@ -55,16 +55,6 @@ $(window).on("load", function() {
     bindTemplateData();
 
     //
-    // DB HANDLERS
-    //
-
-  	// listen to changes on the euro invested field
-  	registerInvestorInvestmentUpdates();
-
-    // listen to changes on the euro invested field
-  	registerTotalInvestmentUpdates();
-
-    //
     // CREATE UI ELEMENTS
     //
 
@@ -84,6 +74,16 @@ $(window).on("load", function() {
 
     // back to login prompt
 		registerLogoutListener();
+
+    //
+    // DB HANDLERS
+    //
+
+  	// listen to changes on the euro invested field
+  	registerInvestorInvestmentUpdates();
+
+    // listen to changes on the euro invested field
+  	registerTotalInvestmentUpdates();
 
     //
     // LISTENERS
