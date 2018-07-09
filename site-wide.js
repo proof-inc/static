@@ -19,6 +19,7 @@ function setSession(authResult) {
   localStorage.setItem('name', authResult.idTokenPayload.name);
   localStorage.setItem('locale', authResult.idTokenPayload.locale);
   localStorage.setItem('picture', authResult.idTokenPayload.picture);
+  localStorage.setItem('user_id', authResult.idTokenPayload.sub);
 
   console.log(authResult.idTokenPayload);
 }
@@ -36,6 +37,7 @@ function logout(onLogout) {
   localStorage.removeItem('access_token');
   localStorage.removeItem('id_token');
   localStorage.removeItem('expires_at');
+  localStorage.removeItem('user_id');
   if (onLogout && typeof onLogout === "function") {
     onLogout();
   }
