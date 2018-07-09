@@ -99,8 +99,7 @@ $(window).on("load", function() {
   	db.ref('investors').on('value', function(snapshot) {
       var totalEuroInvested = 0;
       snapshot.forEach(function(snapshot){
-        var investor = snapshot.val();
-        totalEuroInvested += euroToTokenAmount(investor.euroInvested);
+        totalEuroInvested += snapshot.val().euroInvested;
       });
       updateTotalEuroInvested(totalEuroInvested);
     }, function(error) {console.error(error)});
