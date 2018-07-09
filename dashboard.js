@@ -64,7 +64,7 @@ $(window).on("load", function() {
 function bootstrapDashboard()
 {
   // try to login and catch errors
-  // registerAuthenticationErrorListener();
+  registerAuthenticationErrorListener();
 
   // listen to event of being (anonymously) authenticated
   // as soon as we are, we register ourselves
