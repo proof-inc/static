@@ -90,10 +90,20 @@ $(window).on("load", function() {
     });
 
     // listen to changes on the euro invested field
-  	db.ref('stats/euroInvested').on('value', function(snapshot) {
-    	TOTAL_TOKENS_SOLD = euroToTokenAmount(snapshot.val());
-      updateTotalEuroInvested(snapshot.val());
-    }, function(error) {console.error(error);});
+  	// db.ref('stats/euroInvested').on('value', function(snapshot) {
+    // 	TOTAL_TOKENS_SOLD = euroToTokenAmount(snapshot.val());
+    //   updateTotalEuroInvested(snapshot.val());
+    // }, function(error) {console.error(error)});
+
+    // listen to changes on the euro invested field
+  	db.ref('investors').on('value', function(snapshot) {
+      var totalEuroInvested = 0;
+      snapshot.forEach(function(snapshot){
+        var investor = snapshot.val();
+        totalEuroInvested += euroToTokenAmount(investor.euroInvested);
+      });
+      updateTotalEuroInvested(totalEuroInvested);
+    }, function(error) {console.error(error)});
 
     //
     // CREATE UI ELEMENTS
@@ -264,8 +274,8 @@ $(window).on("load", function() {
     }
 
     function updateTotalEuroInvested(amount) {
-    	var tokenAmount = euroToTokenAmount(amount);
-    	var modifier = percentSold(tokenAmount) / 100;
+    	TOTAL_TOKENS_SOLD = euroToTokenAmount(amount);
+    	var modifier = percentSold(TOTAL_TOKENS_SOLD) / 100;
       tokenSupplyBar.animate(1 - modifier);
     }
 
