@@ -26,7 +26,7 @@ firebase.initializeApp({
 });
 
 // when all scripts have loaded
-$(window).load(function() {
+$(window).on("load", function() {
 
   // do the following only if we are logged in using Auth0
 	handleAuthentication(login, function() {
