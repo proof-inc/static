@@ -211,7 +211,8 @@ function barBaseOptions() {
     text: {
       style: {
         fontFamily: barTextFont,
-        fontSize: '2rem'
+        fontSize: '2rem',
+        transform: null,
       }
     }
   }
@@ -259,7 +260,7 @@ function createTokenSupplyBar() {
         margin: '-25px',
         "font-size": "50px",
         "font-weight": "bold",
-        transform: null,
+        // transform: null,
       },
       autoStyleContainer: false
     },
