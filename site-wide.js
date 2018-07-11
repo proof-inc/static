@@ -43,14 +43,15 @@ function onLogout(fn) {
 }
 
 function login(htmlLoginContainer, loginUrl) {
-  // if (firebaseUI.isPendingRedirect()) {
+  if (!isAuthenticated()) {
     firebaseUI.start(htmlLoginContainer, getFirebaseUiConfig(loginUrl));
-  // }
+  }
 }
 
 function setSession(userObj) {
   setFirebaseSession(userObj);
   IS_AUTHENTICATED = true;
+  console.info("user logged in: " + userObj);
   if (LOGIN_CALLBACK) {
     LOGIN_CALLBACK();
   }
@@ -138,6 +139,7 @@ function logout(fn) {
     localStorage.removeItem(item);
   });
   dbAuth().signOut();
+  console.info("user logged out");
   if (fn) {
     fn();
   }

@@ -221,7 +221,8 @@ function createTokenShareBar() {
     color: '#FFEA82',
     text: {
       value: '',
-      alignToBottom: false
+      alignToBottom: false,
+      transform: null,
     },
     from: {color: emptyColor},
     to: {color: fullColor},
@@ -311,8 +312,12 @@ function tokensSaleAvailable() {
   return BASE_TOKEN_AMOUNT - TOTAL_TOKENS_SOLD;
 }
 
-function percentSold(tokenAmount) {
+function percentTotalSupply(tokenAmount) {
   return 1/((BASE_TOKEN_AMOUNT / tokenAmount))*100;
+}
+
+function percentSoldSupply(tokenAmount) {
+  return 1/((TOTAL_TOKENS_SOLD / tokenAmount))*100;
 }
 
 function tokenBonusAmount(tokenAmount, totalTokensSold) {
@@ -323,7 +328,7 @@ function tokenBonusAmount(tokenAmount, totalTokensSold) {
 
 function getBonusModifier(totalTokensSold) {
   var bonusModifier = 1.0;
-  var salePhase = percentSold(totalTokensSold);
+  var salePhase = percentTotalSupply(totalTokensSold);
   if (salePhase < 2) {
 
   }
@@ -346,18 +351,19 @@ function getBonusModifier(totalTokensSold) {
 }
 
 function updateInvestorEuroInvested(amount) {
-  var tokenAmount = euroToTokenAmount(amount);
-  var shareModifier = percentSold(tokenAmount) / 100;
+  var tokenAmount = euroToTokenAmount(Math.max(0, amount));
   var tokenBonus = tokenBonusAmount(tokenAmount);
   var totalTokenAmount = tokenAmount + tokenBonus;
+  // var shareModifier = percentTotalSupply(tokenAmount) / 100;
+  var shareModifier = percentSoldSupply(tokenAmount) / 100;
   tokenShareBar.animate(shareModifier);
   $('#balance-total').animateNumber({ number: tokenAmount });
   $('#bonus-total').animateNumber({ number: tokenBonus });
 }
 
 function updateTotalEuroInvested(amount) {
-  TOTAL_TOKENS_SOLD = euroToTokenAmount(amount);
-  var modifier = percentSold(TOTAL_TOKENS_SOLD) / 100;
+  TOTAL_TOKENS_SOLD = euroToTokenAmount(Math.max(0, amount));
+  var modifier = percentTotalSupply(TOTAL_TOKENS_SOLD) / 100;
   tokenSupplyBar.animate(1 - modifier);
 }
 
