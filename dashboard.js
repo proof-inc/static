@@ -356,7 +356,7 @@ function updateInvestorEuroInvested(amount) {
   var totalTokenAmount = tokenAmount + tokenBonus;
   // var shareModifier = percentTotalSupply(tokenAmount) / 100;
   var shareModifier = percentSoldSupply(tokenAmount) / 100;
-  tokenShareBar.animate(shareModifier);
+  tokenShareBar.animate(shareModifier || 0);
   $('#balance-total').animateNumber({ number: tokenAmount });
   $('#bonus-total').animateNumber({ number: tokenBonus });
 }
