@@ -270,10 +270,12 @@ function bindTemplateData() {
 
 function hideLoginScreen() {
   $("#dashboard-loading-overlay").hide();
+  $("#protected-content-container").show();
 }
 
 function showLoginScreen() {
   $("#dashboard-loading-overlay").show();
+  $("#protected-content-container").hide();
 }
 
 function updateTokensToReceive() {
