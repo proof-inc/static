@@ -49,10 +49,7 @@ function login(htmlLoginContainer, loginUrl) {
 }
 
 function setSession(userObj) {
-  localStorage.setItem("user_id", userObj.uid);
-  localStorage.setItem("name", userObj.displayName);
-  localStorage.setItem("email", userObj.email);
-  localStorage.setItem("avatar", userObj.photoURL);
+  setFirebaseSession(userObj);
   IS_AUTHENTICATED = true;
   if (LOGIN_CALLBACK) {
     LOGIN_CALLBACK();
@@ -137,7 +134,7 @@ function isAuthenticated() {
 
 function logout(fn) {
   IS_AUTHENTICATED = false;
-  ["user_id", "email", "name", "avatar"].each(function(item){
+  ["user_id", "email", "name", "avatar"].forEach(function(item){
     localStorage.removeItem(item);
   });
   if (fn) {
