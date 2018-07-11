@@ -25,14 +25,33 @@ firebase.initializeApp({
   messagingSenderId: DASHBOARD_MESSAGING_SENDER_ID
 });
 
+// FirebaseUI config.
+var uiConfig = {
+  signInSuccessUrl: AUTH0_CALLBACK_URL,
+  signInOptions: [
+    // Leave the lines as is for the providers you want to offer your users.
+    firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+    firebase.auth.FacebookAuthProvider.PROVIDER_ID,
+    firebase.auth.TwitterAuthProvider.PROVIDER_ID,
+    // firebase.auth.GithubAuthProvider.PROVIDER_ID,
+    // firebase.auth.EmailAuthProvider.PROVIDER_ID,
+    // firebase.auth.PhoneAuthProvider.PROVIDER_ID
+  ],
+  // Terms of service url.
+  tosUrl: 'https://uploads-ssl.webflow.com/5a9ea4e89cbfbc000183c1ee/5b42770de9a7887ffb405748_Privacy%20Policy%20-%20Proof%20Inc.pdf'
+};
+
+// Initialize the FirebaseUI Widget using Firebase.
+var ui = new firebaseui.auth.AuthUI(firebase.auth());
+
+// The start method will wait until the DOM is loaded.
+if (ui.isPendingRedirect()) {
+  ui.start('#dashboard-loading-overlay', uiConfig);
+}
+
 //
 // IDENTITY & VARIABLES
 //
-var userId = getUserId();
-var userIdHash = getUserIdHash();
-var name = getName();
-var email = getEmail(); // not every account comes with email...
-var loginTimestamp = (+ new Date());
 
 //
 // CREATE UI
@@ -44,24 +63,26 @@ var tokenSupplyBar = createTokenSupplyBar();
 createInvestmentCalcSlider();
 createSaleProgressCalcSlider();
 
-// when all scripts have loaded
-$(window).on("load", function() {
+function registerAuthenticationStatusListener() {
+  dbAuth().onAuthStateChanged(function(user)
+  {
+    // User is signed in.
+    if (user) {
 
-  // do the following only if we are logged in using Auth0
-	handleAuthentication(login, function() {
-    try {
-      bootstrapDashboard()
-    }
+      var isAnonymous = user.isAnonymous;
+      var uid = user.uid;
 
-    catch (e) {
-      showError('', e.message)
+      bootstrapDashboard();
+
+    // User is signed out.
+    } else {
+      showLoginScreen();
     }
   });
+}
 
-});
-
-// main init procedure
-function bootstrapDashboard()
+// only register 
+$(window).on("load", function()
 {
   // try to login and catch errors
   registerAuthenticationErrorListener();
@@ -69,7 +90,27 @@ function bootstrapDashboard()
   // listen to event of being (anonymously) authenticated
   // as soon as we are, we register ourselves
   registerAuthenticationStatusListener();
+});
 
+// when all scripts have loaded
+$(window).on("load", function() {
+
+  // // do the following only if we are logged in using Auth0
+	// handleAuthentication(login, function() {
+  //   try {
+  //     bootstrapDashboard()
+  //   }
+  //
+  //   catch (e) {
+  //     showError('', e.message)
+  //   }
+  // });
+
+});
+
+// main init procedure
+function bootstrapDashboard()
+{
   // bind some template vars
   bindTemplateData();
 
@@ -79,14 +120,20 @@ function bootstrapDashboard()
   // init ui
   updateTokensToReceive();
 
+  // listen to changes on the euro invested field
+  registerTotalInvestmentUpdates();
+
   // back to login prompt
   registerLogoutListener();
 
-  // listen to changes on the euro invested field
-  registerInvestorInvestmentUpdates();
+  // init investor entry
+  registerInvestorLoggedIn();
+
+  // hide loading screen
+  hideLoginScreen();
 
   // listen to changes on the euro invested field
-  registerTotalInvestmentUpdates();
+  registerInvestorInvestmentUpdates();
 }
 
 function db() {
@@ -129,30 +176,8 @@ function registerAuthenticationErrorListener() {
   });
 }
 
-function registerAuthenticationStatusListener() {
-  dbAuth().onAuthStateChanged(function(user)
-  {
-    // User is signed in.
-    if (user) {
-
-      var isAnonymous = user.isAnonymous;
-      var uid = user.uid;
-
-      // hide loading screen
-      hideLoadingScreen();
-
-      // init investor entry
-      registerInvestorLoggedIn();
-
-    // User is signed out.
-    } else {
-
-    }
-  });
-}
-
 function registerInvestorInvestmentUpdates() {
-  db().ref('investors/' + userIdHash + '/euroInvested').on('value', function(snapshot) {
+  db().ref('investors/' + getUserIdHash() + '/euroInvested').on('value', function(snapshot) {
     updateInvestorEuroInvested(snapshot.val());
   });
 }
@@ -276,10 +301,11 @@ function createTokenSupplyBar() {
 function registerInvestorLoggedIn() {
   dbThisInvestor().once('value', function(snapshot) {
     var exists = (snapshot.val() !== null);
+    var loginTimestamp = (+ new Date());
 
     // TODO: move to private webhook
     if (!exists) {
-      console.log("initialized entry for investor: " + userIdHash);
+      console.log("initialized entry for investor: " + getUserIdHash());
       dbThisInvestor().set({
         kycDone: false,
         euroInvested: 0,
@@ -297,7 +323,7 @@ function registerInvestorLoggedIn() {
 }
 
 function bindWelcomeName() {
-  $('#welcome-name').html(name);
+  $('#welcome-name').html(getName());
 }
 
 function bindKYCFormEmail() {
@@ -314,8 +340,12 @@ function bindTemplateData() {
   bindKYCFormEmail();
 }
 
-function hideLoadingScreen() {
-  $("#dashboard-loading-overlay").remove();
+function hideLoginScreen() {
+  $("#dashboard-loading-overlay").hide();
+}
+
+function showLoginScreen() {
+  $("#dashboard-loading-overlay").show();
 }
 
 function updateTokensToReceive() {
