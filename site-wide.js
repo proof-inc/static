@@ -54,9 +54,9 @@ function onLogout(fn) {
 }
 
 function login(htmlLoginContainer, loginUrl) {
-  if (firebaseUI.isPendingRedirect()) {
+  // if (firebaseUI.isPendingRedirect()) {
     firebaseUI.start(htmlLoginContainer, getFirebaseUiConfig(loginUrl));
-  }
+  // }
 }
 
 function setSession(userObj) {
