@@ -81,7 +81,7 @@ function registerInvestorLoggedIn() {
 
     // TODO: move to private webhook
     if (!exists) {
-      console.log("initialized entry for investor: " + getUserIdHash());
+      console.log("initialized entry for investor: " + getUserId());
       dbThisInvestor().set({
         kycDone: false,
         euroInvested: 0,
@@ -107,7 +107,7 @@ function dbInvestors() {
 }
 
 function dbThisInvestor() {
-  return dbInvestors().child(getUserIdHash());
+  return dbInvestors().child(getUserId());
 }
 
 //
@@ -129,7 +129,7 @@ function registerManualInvestmentAmountListener() {
 }
 
 function registerInvestorInvestmentUpdates() {
-  db().ref('investors/' + getUserIdHash() + '/euroInvested').on('value', function(snapshot) {
+  db().ref('investors/' + getUserId() + '/euroInvested').on('value', function(snapshot) {
     updateInvestorEuroInvested(snapshot.val());
   });
 }
@@ -258,7 +258,7 @@ function bindKYCFormEmail() {
   var kycLink = $('#kyc-notice a');
   kycLink.attr('href', kycLink
     .attr('href')
-    .replace("{{USER_ID}}", getUserIdHash())
+    .replace("{{USER_ID}}", getUserId())
     .replace("{{USER_EMAIL}}", getEmail())
   );
 }
