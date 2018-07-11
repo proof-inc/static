@@ -137,6 +137,7 @@ function logout(fn) {
   ["user_id", "email", "name", "avatar"].forEach(function(item){
     localStorage.removeItem(item);
   });
+  dbAuth().signOut();
   if (fn) {
     fn();
   }
