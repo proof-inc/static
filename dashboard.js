@@ -13,7 +13,10 @@ const backgroundColor = '#DDD';
 const barTextFont = '"Raleway", Helvetica, sans-serif';
 
 const BASE_TOKEN_AMOUNT = 120 * 1000000;
+
 var TOTAL_TOKENS_SOLD = 0;
+var TOKEN_BALANCE = 0;
+var TOKEN_BONUS_BALANCE = 0;
 
 // init procedure dependent on site-wide init
 // only register
@@ -356,20 +359,40 @@ function getBonusModifier(totalTokensSold) {
 }
 
 function updateInvestorEuroInvested(amount) {
-  var tokenAmount = euroToTokenAmount(Math.max(0, amount));
-  var tokenBonus = tokenBonusAmount(tokenAmount);
-  var totalTokenAmount = tokenAmount + tokenBonus;
   // var shareModifier = percentTotalSupply(tokenAmount) / 100;
-  var shareModifier = percentSoldSupply(tokenAmount) / 100;
+  TOKEN_BALANCE = euroToTokenAmount(Math.max(0, amount));;
+  TOKEN_BONUS_BALANCE = tokenBonusAmount(tokenAmount);;
+  updateInvestorSoldSupplyShare();
+  updateTokenBalance();
+  updateTokenBonusBalance();
+}
+
+function updateTokenBalance() {
+  $('#balance-total').animateNumber({ number: TOKEN_BALANCE });
+}
+
+function updateTokenBonusBalance() {
+  $('#bonus-total').animateNumber({ number: TOKEN_BONUS_BALANCE });
+}
+
+function updateInvestorSoldSupplyShare() {
+  var shareModifier = percentSoldSupply(TOKEN_BALANCE) / 100;
   tokenShareBar.animate(shareModifier || 0);
-  $('#balance-total').animateNumber({ number: tokenAmount });
-  $('#bonus-total').animateNumber({ number: tokenBonus });
 }
 
 function updateTotalEuroInvested(amount) {
   TOTAL_TOKENS_SOLD = euroToTokenAmount(Math.max(0, amount));
+  updateTotalSupplyBar();
+  updateInvestorSoldSupplyShare();
+}
+
+function updateTotalSupplyBar() {
   var modifier = percentTotalSupply(TOTAL_TOKENS_SOLD) / 100;
   tokenSupplyBar.animate(1 - modifier);
+}
+
+function totalInvestorTokenAmount() {
+  return TOKEN_BALANCE + TOKEN_BONUS_BALANCE;
 }
 
 function euroToTokenAmount(euroAmount) {
