@@ -15,43 +15,17 @@ const barTextFont = '"Raleway", Helvetica, sans-serif';
 const BASE_TOKEN_AMOUNT = 120 * 1000000;
 var TOTAL_TOKENS_SOLD = 0;
 
-// Initialize Firebase
-firebase.initializeApp({
-  apiKey: DASHBOARD_API_KEY,
-  authDomain: DASHBOARD_AUTH_DOMAIN,
-  databaseURL: DASHBOARD_DB_URL,
-  projectId: DASHBOARD_PROJECT_ID,
-  storageBucket: DASHBOARD_STORAGE_BUCKET,
-  messagingSenderId: DASHBOARD_MESSAGING_SENDER_ID
-});
+var loginUrl = isProduction()
+    ? 'https://troovebird.com/privatesale'
+  	: 'https://staging.troovebird.com/privatesale'
+    ;
 
-// FirebaseUI config.
-var uiConfig = {
-  signInSuccessUrl: AUTH0_CALLBACK_URL,
-  signInOptions: [
-    // Leave the lines as is for the providers you want to offer your users.
-    firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-    firebase.auth.FacebookAuthProvider.PROVIDER_ID,
-    firebase.auth.TwitterAuthProvider.PROVIDER_ID,
-    // firebase.auth.GithubAuthProvider.PROVIDER_ID,
-    // firebase.auth.EmailAuthProvider.PROVIDER_ID,
-    // firebase.auth.PhoneAuthProvider.PROVIDER_ID
-  ],
-  // Terms of service url.
-  tosUrl: 'https://uploads-ssl.webflow.com/5a9ea4e89cbfbc000183c1ee/5b42770de9a7887ffb405748_Privacy%20Policy%20-%20Proof%20Inc.pdf'
-};
+onLogin(bootstrapDashboard);
 
-// Initialize the FirebaseUI Widget using Firebase.
-var ui = new firebaseui.auth.AuthUI(firebase.auth());
+onLogout(showLoginScreen);
 
 // The start method will wait until the DOM is loaded.
-if (ui.isPendingRedirect()) {
-  ui.start('#dashboard-loading-overlay', uiConfig);
-}
-
-//
-// IDENTITY & VARIABLES
-//
+login('#dashboard-loading-overlay', loginUrl);
 
 //
 // CREATE UI
@@ -62,51 +36,6 @@ var tokenSupplyBar = createTokenSupplyBar();
 // TODO: max aanpassen wanneer nieuwe investeringen gedaan worden
 createInvestmentCalcSlider();
 createSaleProgressCalcSlider();
-
-function registerAuthenticationStatusListener() {
-  dbAuth().onAuthStateChanged(function(user)
-  {
-    // User is signed in.
-    if (user) {
-
-      var isAnonymous = user.isAnonymous;
-      var uid = user.uid;
-
-      bootstrapDashboard();
-
-    // User is signed out.
-    } else {
-      showLoginScreen();
-    }
-  });
-}
-
-// only register 
-$(window).on("load", function()
-{
-  // try to login and catch errors
-  registerAuthenticationErrorListener();
-
-  // listen to event of being (anonymously) authenticated
-  // as soon as we are, we register ourselves
-  registerAuthenticationStatusListener();
-});
-
-// when all scripts have loaded
-$(window).on("load", function() {
-
-  // // do the following only if we are logged in using Auth0
-	// handleAuthentication(login, function() {
-  //   try {
-  //     bootstrapDashboard()
-  //   }
-  //
-  //   catch (e) {
-  //     showError('', e.message)
-  //   }
-  // });
-
-});
 
 // main init procedure
 function bootstrapDashboard()
@@ -136,13 +65,37 @@ function bootstrapDashboard()
   registerInvestorInvestmentUpdates();
 }
 
-function db() {
-  return firebase.database();
+function logoutAndPrompt() {
+  logout(showLoginScreen); // side-wide function of clearing session
 }
 
-function dbAuth() {
-  return firebase.auth();
+function registerInvestorLoggedIn() {
+  dbThisInvestor().once('value', function(snapshot) {
+    var exists = (snapshot.val() !== null);
+    var loginTimestamp = (+ new Date());
+
+    // TODO: move to private webhook
+    if (!exists) {
+      console.log("initialized entry for investor: " + getUserIdHash());
+      dbThisInvestor().set({
+        kycDone: false,
+        euroInvested: 0,
+        logins: [loginTimestamp]
+      });
+    }
+
+    // register last seen
+    else {
+      dbThisInvestor()
+        .child("logins")
+        .push(loginTimestamp);
+    }
+  });
 }
+
+//
+// DB paths
+//
 
 function dbInvestors() {
   return db().ref('investors');
@@ -167,12 +120,6 @@ function registerManualInvestmentAmountListener() {
       .data("ionRangeSlider")
       .update({from: sliderMinInvestment});
     updateTokensToReceive();
-  });
-}
-
-function registerAuthenticationErrorListener() {
-  dbAuth().signInAnonymously().catch(function(error) {
-    showError(error.code, error.message);
   });
 }
 
@@ -296,30 +243,6 @@ function createTokenSupplyBar() {
       bar.path.setAttribute('stroke', state.color);
     }
   }));
-}
-
-function registerInvestorLoggedIn() {
-  dbThisInvestor().once('value', function(snapshot) {
-    var exists = (snapshot.val() !== null);
-    var loginTimestamp = (+ new Date());
-
-    // TODO: move to private webhook
-    if (!exists) {
-      console.log("initialized entry for investor: " + getUserIdHash());
-      dbThisInvestor().set({
-        kycDone: false,
-        euroInvested: 0,
-        logins: [loginTimestamp]
-      });
-    }
-
-    // register last seen
-    else {
-      dbThisInvestor()
-        .child("logins")
-        .push(loginTimestamp);
-    }
-  });
 }
 
 function bindWelcomeName() {
