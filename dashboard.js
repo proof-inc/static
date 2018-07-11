@@ -77,25 +77,30 @@ function logoutAndPrompt() {
 function registerInvestorLoggedIn() {
   dbThisInvestor().once('value', function(snapshot) {
     var exists = (snapshot.val() !== null);
-    var loginTimestamp = (+ new Date());
-
-    // TODO: move to private webhook
-    if (!exists) {
-      console.log("initialized entry for investor: " + getUserId());
-      dbThisInvestor().set({
-        kycDone: false,
-        euroInvested: 0,
-        logins: [loginTimestamp]
-      });
-    }
-
-    // register last seen
-    else {
-      dbThisInvestor()
-        .child("logins")
-        .push(loginTimestamp);
-    }
+    exists ? initInvestorData() : registerInvestorLastSeenTimestamp();
   });
+}
+
+function initInvestorData() {
+  console.log("initialized entry for investor: " + getUserId());
+  dbThisInvestor().set({
+    kycDone: false,
+    userData: {
+      logins: [loginTimestamp]
+    },
+    deposits: {}
+  });
+}
+
+function registerInvestorLastSeenTimestamp() {
+  dbThisInvestor()
+    .child("userData")
+    .child("logins")
+    .push(now());
+}
+
+function now() {
+  return (+ new Date());
 }
 
 //
@@ -108,6 +113,10 @@ function dbInvestors() {
 
 function dbThisInvestor() {
   return dbInvestors().child(getUserId());
+}
+
+function dbThisInvestorDeposits() {
+  return dbThisInvestor().child("deposits");
 }
 
 //
@@ -129,16 +138,22 @@ function registerManualInvestmentAmountListener() {
 }
 
 function registerInvestorInvestmentUpdates() {
-  dbThisInvestor().child("euroInvested").on('value', function(snapshot) {
-    updateInvestorEuroInvested(snapshot.val());
-  });
+  dbThisInvestorDeposits().on('value', function(deposits) {
+    var totalEuroInvested = 0;
+    deposits.forEach(function(deposit){
+      totalEuroInvested += deposit.val().euroAmount;
+    });
+    updateInvestorEuroInvested(totalEuroInvested);
+  }, function(error) {console.error(error)});
 }
 
 function registerTotalInvestmentUpdates() {
-  dbInvestors().on('value', function(snapshot) {
+  dbInvestors().on('value', function(investors) {
     var totalEuroInvested = 0;
-    snapshot.forEach(function(snapshot){
-      totalEuroInvested += snapshot.val().euroInvested;
+    investors.forEach(function(investor){
+      investor.val().deposits.forEach(function(deposit){
+        totalEuroInvested += deposit.euroAmount;
+      });
     });
     updateTotalEuroInvested(totalEuroInvested);
   }, function(error) {console.error(error)});
