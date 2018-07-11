@@ -360,8 +360,8 @@ function getBonusModifier(totalTokensSold) {
 
 function updateInvestorEuroInvested(amount) {
   // var shareModifier = percentTotalSupply(tokenAmount) / 100;
-  TOKEN_BALANCE = euroToTokenAmount(Math.max(0, amount));;
-  TOKEN_BONUS_BALANCE = tokenBonusAmount(tokenAmount);;
+  TOKEN_BALANCE = euroToTokenAmount(Math.max(0, amount));
+  TOKEN_BONUS_BALANCE = tokenBonusAmount(TOKEN_BALANCE);
   updateInvestorSoldSupplyShare();
   updateTokenBalance();
   updateTokenBonusBalance();
