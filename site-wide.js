@@ -23,6 +23,9 @@ var LOGIN_CALLBACK = null;
 // what to do when we notice that firebase has logged out
 var LOGOUT_CALLBACK = null;
 
+// on page init
+var INIT_CALLBACK = null;
+
 // only register
 $(window).on("load", function()
 {
@@ -32,7 +35,15 @@ $(window).on("load", function()
   // listen to event of being (anonymously) authenticated
   // as soon as we are, we register ourselves
   registerAuthenticationStatusListener();
+
+  if (INIT_CALLBACK) {
+    INIT_CALLBACK();
+  }
 });
+
+function onInit(fn) {
+  INIT_CALLBACK = fn;
+}
 
 function onLogin(fn) {
   LOGIN_CALLBACK = fn;

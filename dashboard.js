@@ -15,17 +15,21 @@ const barTextFont = '"Raleway", Helvetica, sans-serif';
 const BASE_TOKEN_AMOUNT = 120 * 1000000;
 var TOTAL_TOKENS_SOLD = 0;
 
-var loginUrl = isProduction()
-    ? 'https://troovebird.com/privatesale'
-  	: 'https://staging.troovebird.com/privatesale'
-    ;
+// init procedure dependent on site-wide init
+onInit(function() {
 
-onLogin(bootstrapDashboard);
+  // callback to run when a login is detected
+  onLogin(bootstrapDashboard);
 
-onLogout(showLoginScreen);
+  // callback to run when logout is detected
+  onLogout(showLoginScreen);
 
-// The start method will wait until the DOM is loaded.
-login('#dashboard-loading-overlay', loginUrl);
+  // The start method will wait until the DOM is loaded.
+  login('#dashboard-loading-overlay', isProduction()
+      ? 'https://troovebird.com/privatesale'
+    	: 'https://staging.troovebird.com/privatesale');
+
+});
 
 //
 // CREATE UI
