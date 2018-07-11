@@ -16,7 +16,8 @@ const BASE_TOKEN_AMOUNT = 120 * 1000000;
 var TOTAL_TOKENS_SOLD = 0;
 
 // init procedure dependent on site-wide init
-onInit(function() {
+// only register
+$(window).on("load", function() {
 
   // callback to run when a login is detected
   onLogin(bootstrapDashboard);
