@@ -86,7 +86,7 @@ function initInvestorData() {
   dbThisInvestor().set({
     kycDone: false,
     userData: {
-      logins: [loginTimestamp]
+      logins: [now()]
     },
     deposits: {}
   });
@@ -137,26 +137,36 @@ function registerManualInvestmentAmountListener() {
   });
 }
 
+// whenever the deposit array of this investor changes,
+// tally the deposit value and update stats
 function registerInvestorInvestmentUpdates() {
   dbThisInvestorDeposits().on('value', function(deposits) {
-    var totalEuroInvested = 0;
-    deposits.forEach(function(deposit){
-      totalEuroInvested += deposit.val().euroAmount;
-    });
-    updateInvestorEuroInvested(totalEuroInvested);
+    updateInvestorEuroInvested(totalInvestorDeposits(deposits));
   }, function(error) {console.error(error)});
 }
 
+// whenever the deposit array of any investor changes,
+// tally all deposit value and update stats
 function registerTotalInvestmentUpdates() {
   dbInvestors().on('value', function(investors) {
-    var totalEuroInvested = 0;
-    investors.forEach(function(investor){
-      investor.val().deposits.forEach(function(deposit){
-        totalEuroInvested += deposit.euroAmount;
-      });
-    });
-    updateTotalEuroInvested(totalEuroInvested);
+    updateTotalEuroInvested(totalDeposits(investors));
   }, function(error) {console.error(error)});
+}
+
+function totalDeposits(investorsSnapshot) {
+  var totalEuroInvested = 0;
+  investorsSnapshot.forEach(function(investor) {
+    totalEuroInvested += totalInvestorDeposits(investor.child('deposits'));
+  });
+  return totalEuroInvested;
+}
+
+function totalInvestorDeposits(depositsSnapshot) {
+  var totalEuroInvested = 0;
+  depositsSnapshot.forEach(function(deposit){
+    totalEuroInvested += deposit.child('euroAmount').val();
+  });
+  return totalEuroInvested;
 }
 
 //
