@@ -312,12 +312,17 @@ function tokensSaleAvailable() {
   return BASE_TOKEN_AMOUNT - TOTAL_TOKENS_SOLD;
 }
 
+function percentageOf(fraction, total) {
+  var division = total / fraction;
+  return (division > 0) ? ((1/division)*100) : 0;
+}
+
 function percentTotalSupply(tokenAmount) {
-  return 1/((BASE_TOKEN_AMOUNT / tokenAmount))*100;
+  return percentageOf(tokenAmount, BASE_TOKEN_AMOUNT);
 }
 
 function percentSoldSupply(tokenAmount) {
-  return 1/((TOTAL_TOKENS_SOLD / tokenAmount))*100;
+  return percentageOf(tokenAmount, TOTAL_TOKENS_SOLD);
 }
 
 function tokenBonusAmount(tokenAmount, totalTokensSold) {
