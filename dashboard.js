@@ -83,12 +83,8 @@ function registerInvestorLoggedIn() {
 
 function initInvestorData() {
   console.log("initialized entry for investor: " + getUserId());
-  dbThisInvestor().set({
-    kycDone: false,
-    userData: {
-      logins: [now()]
-    },
-    deposits: {}
+  dbThisInvestor().child("userData").set({
+    logins: [now()]
   });
 }
 
