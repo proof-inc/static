@@ -133,19 +133,19 @@ function registerManualInvestmentAmountListener() {
   });
 }
 
-// whenever the deposit array of this investor changes,
-// tally the deposit value and update stats
-function registerInvestorInvestmentUpdates() {
-  dbThisInvestorDeposits().on('value', function(deposits) {
-    updateInvestorEuroInvested(totalInvestorDeposits(deposits));
-  }, function(error) {console.error(error)});
-}
-
 // whenever the deposit array of any investor changes,
 // tally all deposit value and update stats
 function registerTotalInvestmentUpdates() {
   dbInvestors().on('value', function(investors) {
     updateTotalEuroInvested(totalDeposits(investors));
+  }, function(error) {console.error(error)});
+}
+
+// whenever the deposit array of this investor changes,
+// tally the deposit value and update stats
+function registerInvestorInvestmentUpdates() {
+  dbThisInvestorDeposits().on('value', function(deposits) {
+    updateInvestorEuroInvested(totalInvestorDeposits(deposits));
   }, function(error) {console.error(error)});
 }
 
