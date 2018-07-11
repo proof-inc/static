@@ -129,7 +129,7 @@ function registerManualInvestmentAmountListener() {
 }
 
 function registerInvestorInvestmentUpdates() {
-  db().ref('investors/' + getUserId() + '/euroInvested').on('value', function(snapshot) {
+  dbThisInvestor().child("euroInvested").on('value', function(snapshot) {
     updateInvestorEuroInvested(snapshot.val());
   });
 }
