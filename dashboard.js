@@ -82,7 +82,7 @@ function logoutAndPrompt() {
 function registerInvestorLoggedIn() {
   dbThisInvestor().once('value', function(snapshot) {
     var exists = (snapshot.val() !== null);
-    exists ? initInvestorData() : registerInvestorLastSeenTimestamp();
+    exists ? registerInvestorLastSeenTimestamp() : initInvestorData();
   });
 }
 
@@ -90,7 +90,7 @@ function initInvestorData() {
   console.log("initialized entry for investor: " + getUserId());
   dbThisInvestor().child("userData").set({
     logins: [now()],
-    referrer: getReferrerId()
+    referrer: getReferrer()
   });
 }
 
@@ -121,7 +121,7 @@ function hasReferrer() {
   return getReferrerId() && getReferrerId() !== "";
 }
 
-function getReferrerId() {
+function getReferrer() {
   return localStorage.getItem("referrer");
 }
 
