@@ -87,7 +87,8 @@ function registerInvestorLoggedIn() {
 function initInvestorData() {
   console.log("initialized entry for investor: " + getUserId());
   dbThisInvestor().child("userData").set({
-    logins: [now()]
+    logins: [now()],
+    referrer: getReferrerId()
   });
 }
 
@@ -100,6 +101,26 @@ function registerInvestorLastSeenTimestamp() {
 
 function now() {
   return (+ new Date());
+}
+
+function bindReferralButtonUrl() {
+  $("#referral-button").attr("href", "/privatesale/" + getUserId());
+}
+
+function parseReferrer() {
+  var referralUserId = (new URLSearchParams(window.location.search)).get("ref");
+  if (referralUserId && referralUserId !== "" && referralUserId !== getUserId()) {
+    localStorage.setItem("referrer", referralUserId);
+    window.history.replaceState(null, null, window.location.pathname); // delete referral trace
+  }
+}
+
+function hasReferrer() {
+  return getReferrerId() && getReferrerId() !== "";
+}
+
+function getReferrerId() {
+  return localStorage.getItem("referrer");
 }
 
 //
@@ -290,6 +311,7 @@ function bindKYCFormEmail() {
 
 function bindTemplateData() {
   bindWelcomeName();
+  bindReferralButtonUrl();
   bindKYCFormEmail();
 }
 
