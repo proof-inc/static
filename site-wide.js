@@ -156,7 +156,7 @@ function redirectToHome() {
 	location.href = '/';
 }
 
-function toDashboardOnLogout() {
+function redirectToDashboardOnLogout() {
   onLogout(redirectToDashboard);
 }
 
