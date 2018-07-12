@@ -22,6 +22,8 @@ var TOKEN_BONUS_BALANCE = 0;
 // only register
 $(window).on("load", function() {
 
+  parseReferrer();
+
   // callback to run when a login is detected
   onLogin(bootstrapDashboard);
 
