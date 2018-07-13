@@ -133,7 +133,7 @@ function isAuthenticated() {
   return IS_AUTHENTICATED;
 }
 
-function clientLogout() {
+function clientLogout(fn) {
   IS_AUTHENTICATED = false;
   ["user_id", "email", "name", "avatar"].forEach(function(item){
     localStorage.removeItem(item);
