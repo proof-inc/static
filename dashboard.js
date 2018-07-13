@@ -331,8 +331,10 @@ function createTokenShareBar() {
     color: '#FFEA82',
     text: {
       value: '',
-      alignToBottom: false,
-      // transform: undefined,
+      alignToBottom: true,
+      style: {
+        textAlign: 'center'
+      }
     },
     from: {color: emptyColor},
     to: {color: fullColor},
@@ -392,7 +394,8 @@ function createTokenSupplyBar() {
     easing: 'easeInOut',
     duration: 1400,
     text: {
-      autoStyleContainer: false,
+      autoStyleContainer: true,
+      alignToBottom: false,
       style: {
         fontFamily: barTextFont,
         fontSize: '50px',
