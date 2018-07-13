@@ -320,7 +320,7 @@ function barBaseOptions() {
       style: {
         fontFamily: barTextFont,
         fontSize: '2rem',
-        transform: null,
+        // transform: null,
       }
     }
   }
@@ -332,7 +332,7 @@ function createTokenShareBar() {
     text: {
       value: '',
       alignToBottom: false,
-      transform: null,
+      // transform: undefined,
     },
     from: {color: emptyColor},
     to: {color: fullColor},
@@ -342,10 +342,10 @@ function createTokenShareBar() {
       bar.path.setAttribute('stroke', state.color);
       var value = Math.round(bar.value() * 100);
       if (value > 1) {
-        bar.setText(value);
+        bar.setText(value = '%');
       }
       else {
-        bar.setText(0);
+        bar.setText("0%");
       }
 
       bar.text.style.color = state.color;
@@ -406,7 +406,7 @@ function createTokenSupplyBar() {
       circle.path.setAttribute('stroke', state.color);
       circle.path.setAttribute('stroke-width', state.width);
       var value = Math.round(circle.value() * 100);
-      circle.setText(value);
+      circle.setText(value + '%');
     }
   });
 }
