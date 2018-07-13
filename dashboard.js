@@ -9,7 +9,7 @@ var sliderSalePhase = 0;
 const strokeWidth = 25;
 const emptyColor = '#cc0000';
 const fullColor = '#26CA7B';
-const backgroundColor = '#DDD';
+const trailColor = '#CCC';
 const barTextFont = '"Raleway", Helvetica, sans-serif';
 
 const BASE_TOKEN_AMOUNT = 120 * 1000000;
@@ -311,7 +311,7 @@ function createInvestmentCalcSlider() {
 function barBaseOptions() {
   return {
     strokeWidth: strokeWidth,
-    trailColor: backgroundColor,
+    trailColor: trailColor,
     trailWidth: 25,
     easing: 'easeInOut',
     duration: 1400,
@@ -353,33 +353,58 @@ function createTokenShareBar() {
   }));
 }
 
+// function createTokenSupplyBar() {
+//   return new ProgressBar.Line('#token-supply-left-progress', $.extend(true, barBaseOptions(), {
+//     color: '#F8BC3F',
+//     trailColor: 'fff',
+//     svgStyle: {width: '100%', height: '100%'},
+//     text: {
+//       style: {
+//         color: '#333',
+//         //position: 'absolute',
+//         //right: '0',
+//         //top: '50px',
+//         "text-align": "center",
+//         padding: 0,
+//         margin: '-25px',
+//         "font-size": "50px",
+//         "font-weight": "bold",
+//         // transform: null,
+//       },
+//       autoStyleContainer: false
+//     },
+//     from: {color: emptyColor},
+//     to: {color: fullColor},
+//     step: (state, bar) => {
+//       bar.setText(Math.round(bar.value() * 100) + ' %');
+//       bar.path.setAttribute('stroke', state.color);
+//     }
+//   }));
+// }
+
 function createTokenSupplyBar() {
-  return new ProgressBar.Line('#token-supply-left-progress', $.extend(true, barBaseOptions(), {
+  return new ProgressBar.Circle('#token-supply-left-progress', {
     color: '#F8BC3F',
-    trailColor: 'fff',
-    svgStyle: {width: '100%', height: '100%'},
+    // This has to be the same size as the maximum width to
+    // prevent clipping
+    strokeWidth: 10,
+    trailWidth: 10,
+    easing: 'easeInOut',
+    duration: 1400,
     text: {
-      style: {
-        color: '#333',
-        //position: 'absolute',
-        //right: '0',
-        //top: '50px',
-        "text-align": "center",
-        padding: 0,
-        margin: '-25px',
-        "font-size": "50px",
-        "font-weight": "bold",
-        // transform: null,
-      },
       autoStyleContainer: false
     },
-    from: {color: emptyColor},
-    to: {color: fullColor},
-    step: (state, bar) => {
-      bar.setText(Math.round(bar.value() * 100) + ' %');
-      bar.path.setAttribute('stroke', state.color);
+    from: { color: emptyColor, width: 10 },
+    to: { fullColor: '#333', width: 10 },
+    
+    // Set default step function for all animate calls
+    step: function(state, circle) {
+      circle.path.setAttribute('stroke', state.color);
+      circle.path.setAttribute('stroke-width', state.width);
+      var value = Math.round(circle.value() * 100);
+      circle.setText(value);
     }
-  }));
+  });
 }
 
 function bindWelcomeName() {
