@@ -333,6 +333,7 @@ function createTokenShareBar() {
     text: {
       value: '',
       alignToBottom: true,
+      className: "dashboard-token-share-text",
       style: {
         // textAlign: 'center',
         // transform: null
@@ -387,7 +388,7 @@ function createTokenShareBar() {
 // }
 
 function createTokenSupplyBar() {
-  return new ProgressBar.Circle('#token-supply-left-progress', {
+  return new ProgressBar.Circle('#token-supply-left-progress', $.extend(true, barBaseOptions(), {
     color: '#F8BC3F',
     // This has to be the same size as the maximum width to
     // prevent clipping
@@ -398,6 +399,7 @@ function createTokenSupplyBar() {
     text: {
       autoStyleContainer: true,
       alignToBottom: false,
+      className: "dashboard-token-supply-text",
       style: {
         // fontFamily: barTextFont,
         fontSize: '50px',
@@ -417,7 +419,7 @@ function createTokenSupplyBar() {
       var value = Math.round(circle.value() * 100);
       circle.setText(value + '%');
     }
-  });
+  }));
 }
 
 function bindWelcomeName() {
