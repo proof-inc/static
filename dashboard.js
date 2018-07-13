@@ -134,6 +134,10 @@ function hasReferrerUrl() {
   return getReferrerUrl() && getReferrerUrl() !== "";
 }
 
+function hasReferrer() {
+  return getReferrer() != "" && getReferrer() != null && getReferrer() != undefined;
+}
+
 function deleteReferrerUrl() {
   window.history.replaceState(null, null, window.location.pathname); // delete referral trace
 }
@@ -143,11 +147,8 @@ function resetReferrer() {
 }
 
 function setReferrer(ref) {
-  resetReferrer();
-  if (ref != getUserId()) {
-    localStorage.setItem(REFERRER_STORAGE_KEY, ref);
-    console.info("Referrer set: " + ref);
-  }
+  localStorage.setItem(REFERRER_STORAGE_KEY, (ref != getUserId()) ? ref : null);
+  console.info("Referrer set: " + ref);
   return getReferrer();
 }
 
