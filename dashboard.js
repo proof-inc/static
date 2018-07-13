@@ -53,6 +53,9 @@ createSaleProgressCalcSlider();
 // main init procedure
 function bootstrapDashboard()
 {
+  // set url to our own referrer for dummy sharing
+  setReferrer();
+
   // bind some template vars
   bindTemplateData();
 
@@ -122,7 +125,6 @@ function parseReferrer() {
     if (referralUserId && referralUserId !== "" && referralUserId !== getUserId()) {
       localStorage.setItem("referrer", referralUserId);
     }
-    setReferrer();
   }
 }
 
