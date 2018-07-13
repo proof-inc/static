@@ -122,9 +122,10 @@ function bindReferralButtonUrl() {
 }
 
 function bindReferralLink() {
+  var url = AUTH0_CALLBACK_URL + '/' + getUserId();
   $(".referral-link")
-    .text(window.location)
-    .attr("href", window.location);
+    .text(url)
+    .attr("href", url);
 }
 
 function parseReferrer() {
@@ -340,7 +341,7 @@ function createTokenShareBar() {
       className: "dashboard-token-share-text",
       style: {
         // textAlign: 'center',
-        // transform: null
+        transform: null
       }
     },
     from: {color: emptyColor},
