@@ -395,8 +395,8 @@ function createTokenSupplyBar() {
       autoStyleContainer: false
     },
     from: { color: emptyColor, width: 10 },
-    to: { fullColor: '#333', width: 10 },
-    
+    to: { color: fullColor, width: 10 },
+
     // Set default step function for all animate calls
     step: function(state, circle) {
       circle.path.setAttribute('stroke', state.color);
