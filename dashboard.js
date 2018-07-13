@@ -121,6 +121,12 @@ function bindReferralButtonUrl() {
   $("#referral-button").attr("href", "/privatesale/" + getUserId());
 }
 
+function bindReferralLink() {
+  $(".referral-link")
+    .text(window.location)
+    .attr("href", window.location);
+}
+
 function parseReferrer() {
   if ('URLSearchParams' in window) {
     if (hasReferrerUrl() && !isReferrerUrlOwn()) {
@@ -135,7 +141,8 @@ function hasReferrerUrl() {
 }
 
 function hasReferrer() {
-  return getReferrer() != "" && getReferrer() != null && getReferrer() != undefined;
+  var r = getReferrer();
+  return r != "" && r != null && r != undefined && r != "null";
 }
 
 function deleteReferrerUrl() {
@@ -143,11 +150,11 @@ function deleteReferrerUrl() {
 }
 
 function resetReferrer() {
-  return setReferrer(null);
+  return setReferrer("");
 }
 
 function setReferrer(ref) {
-  localStorage.setItem(REFERRER_STORAGE_KEY, (ref != getUserId()) ? ref : null);
+  localStorage.setItem(REFERRER_STORAGE_KEY, (ref != getUserId()) ? ref : "");
   console.info("Referrer set: " + ref);
   return getReferrer();
 }
@@ -391,6 +398,7 @@ function bindKYCFormEmail() {
 function bindTemplateData() {
   bindWelcomeName();
   bindReferralButtonUrl();
+  bindReferralLink();
   bindKYCFormEmail();
 }
 
