@@ -320,7 +320,8 @@ function barBaseOptions() {
       style: {
         fontFamily: barTextFont,
         fontSize: '2rem',
-        // transform: null,
+        transform: null,
+        textAlign: 'center',
       }
     }
   }
@@ -328,13 +329,13 @@ function barBaseOptions() {
 
 function createTokenShareBar() {
   return new ProgressBar.SemiCircle('#progress-share-percentage', $.extend(true, barBaseOptions(), {
-    color: '#FFEA82',
+    color: '#333',
     text: {
       value: '',
       alignToBottom: true,
       style: {
-        textAlign: 'center',
-        transform: null
+        // textAlign: 'center',
+        // transform: null
       }
     },
     from: {color: emptyColor},
@@ -398,12 +399,12 @@ function createTokenSupplyBar() {
       autoStyleContainer: true,
       alignToBottom: false,
       style: {
-        fontFamily: barTextFont,
+        // fontFamily: barTextFont,
         fontSize: '50px',
         fontWeight: "bold",
         color: '#333',
-        textAlign: 'center',
-        transform: null
+        // textAlign: 'center',
+        // transform: null
       }
     },
     from: { color: emptyColor, width: 10 },
