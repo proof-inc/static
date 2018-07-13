@@ -315,7 +315,10 @@ function barBaseOptions() {
     trailWidth: 25,
     easing: 'easeInOut',
     duration: 1400,
-    svgStyle: null,
+    svgStyle: {
+      display: 'block',
+      width: '100%'
+    },,
     text: {
       style: {
         fontFamily: barTextFont,
