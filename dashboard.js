@@ -14,9 +14,12 @@ const barTextFont = '"Raleway", Helvetica, sans-serif';
 
 const BASE_TOKEN_AMOUNT = 120 * 1000000;
 
+var TOTAL_EURO_RAISED = 0;
 var TOTAL_TOKENS_SOLD = 0;
 var TOKEN_BALANCE = 0;
 var TOKEN_BONUS_BALANCE = 0;
+var REFERRAL_COUNT = 0;
+var REFERRAL_EURO_RAISE = 0;
 
 // init procedure dependent on site-wide init
 // only register
@@ -105,20 +108,39 @@ function now() {
   return (+ new Date());
 }
 
+//
+// REFERRALS
+//
+
 function bindReferralButtonUrl() {
   $("#referral-button").attr("href", "/privatesale/" + getUserId());
 }
 
 function parseReferrer() {
-  var referralUserId = (new URLSearchParams(window.location.search)).get("ref");
-  if (referralUserId && referralUserId !== "" && referralUserId !== getUserId()) {
-    localStorage.setItem("referrer", referralUserId);
-    window.history.replaceState(null, null, window.location.pathname); // delete referral trace
+  if ('URLSearchParams' in window) {
+    var referralUserId = (new URLSearchParams(window.location.search)).get("ref");
+    if (referralUserId && referralUserId !== "" && referralUserId !== getUserId()) {
+      localStorage.setItem("referrer", referralUserId);
+    }
+    setReferrer();
   }
 }
 
 function hasReferrer() {
   return getReferrerId() && getReferrerId() !== "";
+}
+
+function deleteReferrer() {
+  window.history.replaceState(null, null, window.location.pathname); // delete referral trace
+}
+
+function setReferrer() {
+  if ('URLSearchParams' in window) {
+    var searchParams = new URLSearchParams(window.location.search)
+    searchParams.set("ref", getUserId());
+    var newRelativePathQuery = window.location.pathname + '?' + searchParams.toString();
+    history.pushState(null, '', newRelativePathQuery);
+  }
 }
 
 function getReferrer() {
@@ -129,8 +151,12 @@ function getReferrer() {
 // DB paths
 //
 
+function dbEnv() {
+  return db().ref(ENV);
+}
+
 function dbInvestors() {
-  return db().ref('investors');
+  return dbEnv().ref('investors');
 }
 
 function dbThisInvestor() {
@@ -169,6 +195,7 @@ function registerTotalInvestmentUpdates() {
 
 // whenever the deposit array of this investor changes,
 // tally the deposit value and update stats
+// TODO: vervangen met enkelvoudige investorloop
 function registerInvestorInvestmentUpdates() {
   dbThisInvestorDeposits().on('value', function(deposits) {
     updateInvestorEuroInvested(totalInvestorDeposits(deposits));
@@ -183,12 +210,31 @@ function totalDeposits(investorsSnapshot) {
   return totalEuroInvested;
 }
 
+// TODO: turn into grand investor processing loop
+// function processInvestors(investorsSnapshot) {
+//   TOTAL_EURO_RAISED = 0;
+//   REFERRAL_EURO_RAISE = 0;
+//   REFERRAL_COUNT = 0;
+//   investorsSnapshot.forEach(function(investor) {
+//     var investorEuroAmount = totalInvestorDeposits(investor.child('deposits'));
+//     TOTAL_EURO_RAISED += investorEuroAmount;
+//     if (investor.ref("userData/referrer").val() == getUserId()) {
+//       REFERRAL_COUNT++;
+//       REFERRAL_EURO_RAISE += investorEuroAmount;
+//     }
+//   });
+// }
+
 function totalInvestorDeposits(depositsSnapshot) {
   var totalEuroInvested = 0;
   depositsSnapshot.forEach(function(deposit){
     totalEuroInvested += deposit.child('euroAmount').val();
   });
   return totalEuroInvested;
+}
+
+function checkInvestorReferral(investorSnapshot) {
+
 }
 
 //
