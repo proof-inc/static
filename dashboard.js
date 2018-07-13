@@ -393,10 +393,12 @@ function createTokenSupplyBar() {
     duration: 1400,
     text: {
       autoStyleContainer: false,
-      fontFamily: '"Raleway", Helvetica, sans-serif',
-      fontSize: '50px',
-      fontWeight: "bold",
-      color: '#333'
+      style: {
+        fontFamily: barTextFont,
+        fontSize: '50px',
+        fontWeight: "bold",
+        color: '#333'
+      }
     },
     from: { color: emptyColor, width: 10 },
     to: { color: fullColor, width: 10 },
