@@ -332,7 +332,7 @@ function barBaseOptions() {
 }
 
 function createTokenShareBar() {
-  return new ProgressBar.SemiCircle('#progress-share-percentage', merge(barBaseOptions(), {
+  return new ProgressBar.SemiCircle('#progress-share-percentage', deepmerge(barBaseOptions(), {
     color: '#333',
     text: {
       value: '',
@@ -392,7 +392,7 @@ function createTokenShareBar() {
 // }
 
 function createTokenSupplyBar() {
-  return new ProgressBar.Circle('#token-supply-left-progress', merge(barBaseOptions(), {
+  return new ProgressBar.Circle('#token-supply-left-progress', deepmerge(barBaseOptions(), {
     color: '#F8BC3F',
     // This has to be the same size as the maximum width to
     // prevent clipping
