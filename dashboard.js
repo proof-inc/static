@@ -124,6 +124,7 @@ function parseReferrer() {
     var referralUserId = (new URLSearchParams(window.location.search)).get("ref");
     if (referralUserId && referralUserId !== "" && referralUserId !== getUserId()) {
       localStorage.setItem("referrer", referralUserId);
+      deleteReferrer();
     }
   }
 }
@@ -158,7 +159,7 @@ function dbEnv() {
 }
 
 function dbInvestors() {
-  return dbEnv().ref('investors');
+  return dbEnv().child('investors');
 }
 
 function dbThisInvestor() {
