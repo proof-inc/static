@@ -60,8 +60,10 @@ function setSession(userObj) {
 function registerAuthenticationStatusListener() {
   dbAuth().onAuthStateChanged(function(user) {
     if (user) {
+      console.info("received login callback from server");
       setSession(user);
     } else {
+      console.info("received logout callback from server");
       clientLogout();
     }
   });
