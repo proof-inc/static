@@ -18,8 +18,11 @@ var TOTAL_EURO_RAISED = 0;
 var TOTAL_TOKENS_SOLD = 0;
 var TOKEN_BALANCE = 0;
 var TOKEN_BONUS_BALANCE = 0;
+
 var REFERRAL_COUNT = 0;
 var REFERRAL_EURO_RAISE = 0;
+const REFERRER_STORAGE_KEY = "referrer";
+const REFERRER_URL_KEY = "ref";
 
 // init procedure dependent on site-wide init
 // only register
@@ -54,7 +57,7 @@ createSaleProgressCalcSlider();
 function bootstrapDashboard()
 {
   // set url to our own referrer for dummy sharing
-  setReferrer();
+  setReferrerUrl();
 
   // bind some template vars
   bindTemplateData();
@@ -94,15 +97,14 @@ function registerInvestorLoggedIn() {
 
 function initInvestorData() {
   console.log("initialized entry for investor: " + getUserId());
-  dbThisInvestor().child("userData").set({
+  dbThisInvestorUserData().set({
     logins: [now()],
     referrer: getReferrer()
   });
 }
 
 function registerInvestorLastSeenTimestamp() {
-  dbThisInvestor()
-    .child("userData")
+  dbThisInvestorUserData()
     .child("logins")
     .push(now());
 }
@@ -121,33 +123,45 @@ function bindReferralButtonUrl() {
 
 function parseReferrer() {
   if ('URLSearchParams' in window) {
-    var referralUserId = (new URLSearchParams(window.location.search)).get("ref");
-    if (referralUserId && referralUserId !== "" && referralUserId !== getUserId()) {
-      localStorage.setItem("referrer", referralUserId);
-      deleteReferrer();
+    if (hasReferrerUrl() && !isReferrerUrlOwn()) {
+      setReferrer(getReferrerUrl());
+      deleteReferrerUrl();
     }
   }
 }
 
-function hasReferrer() {
-  return getReferrerId() && getReferrerId() !== "";
+function hasReferrerUrl() {
+  return getReferrerUrl() && getReferrerUrl() !== "";
 }
 
-function deleteReferrer() {
+function deleteReferrerUrl() {
   window.history.replaceState(null, null, window.location.pathname); // delete referral trace
 }
 
-function setReferrer() {
+function setReferrer(ref) {
+  localStorage.setItem(REFERRER_STORAGE_KEY, ref);
+  console.info("Referrer set: " + ref);
+}
+
+function setReferrerUrl() {
   if ('URLSearchParams' in window) {
     var searchParams = new URLSearchParams(window.location.search)
-    searchParams.set("ref", getUserId());
+    searchParams.set(REFERRER_URL_KEY, getUserId());
     var newRelativePathQuery = window.location.pathname + '?' + searchParams.toString();
     history.pushState(null, '', newRelativePathQuery);
   }
 }
 
+function getReferrerUrl() {
+  return (new URLSearchParams(window.location.search)).get(REFERRER_URL_KEY);
+}
+
+function isReferrerUrlOwn() {
+  return hasReferrerUrl() && (getReferrerUrl() == getUserId());
+}
+
 function getReferrer() {
-  return localStorage.getItem("referrer");
+  return localStorage.getItem(REFERRER_STORAGE_KEY);
 }
 
 //
@@ -164,6 +178,10 @@ function dbInvestors() {
 
 function dbThisInvestor() {
   return dbInvestors().child(getUserId());
+}
+
+function dbThisInvestorUserData() {
+  return dbThisInvestor().child("userData");
 }
 
 function dbThisInvestorDeposits() {
