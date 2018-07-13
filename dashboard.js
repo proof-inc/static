@@ -397,7 +397,9 @@ function createTokenSupplyBar() {
         fontFamily: barTextFont,
         fontSize: '50px',
         fontWeight: "bold",
-        color: '#333'
+        color: '#333',
+        textAlign: 'center',
+        transform: null
       }
     },
     from: { color: emptyColor, width: 10 },
