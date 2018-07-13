@@ -318,20 +318,21 @@ function barBaseOptions() {
     svgStyle: {
       display: 'block',
       width: '100%'
-    },,
+    },
     text: {
       style: {
         fontFamily: barTextFont,
         fontSize: '2rem',
         transform: null,
         textAlign: 'center',
+        position: 'absolute'
       }
     }
   }
 }
 
 function createTokenShareBar() {
-  return new ProgressBar.SemiCircle('#progress-share-percentage', $.extend(true, barBaseOptions(), {
+  return new ProgressBar.SemiCircle('#progress-share-percentage', merge(barBaseOptions(), {
     color: '#333',
     text: {
       value: '',
@@ -391,7 +392,7 @@ function createTokenShareBar() {
 // }
 
 function createTokenSupplyBar() {
-  return new ProgressBar.Circle('#token-supply-left-progress', $.extend(true, barBaseOptions(), {
+  return new ProgressBar.Circle('#token-supply-left-progress', merge(barBaseOptions(), {
     color: '#F8BC3F',
     // This has to be the same size as the maximum width to
     // prevent clipping
