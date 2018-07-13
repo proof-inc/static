@@ -62,7 +62,7 @@ function registerAuthenticationStatusListener() {
     if (user) {
       setSession(user);
     } else {
-      logout();
+      clientLogout();
     }
   });
 }
@@ -133,12 +133,11 @@ function isAuthenticated() {
   return IS_AUTHENTICATED;
 }
 
-function logout(fn) {
+function clientLogout() {
   IS_AUTHENTICATED = false;
   ["user_id", "email", "name", "avatar"].forEach(function(item){
     localStorage.removeItem(item);
   });
-  dbAuth().signOut();
   console.info("user logged out");
   if (fn) {
     fn();
@@ -146,6 +145,14 @@ function logout(fn) {
   else if (LOGOUT_CALLBACK) {
     LOGOUT_CALLBACK();
   }
+}
+
+function serverLogout() {
+  dbAuth().signOut();
+}
+
+function logout(fn) {
+  serverLogout();
 }
 
 function redirectToDashboard() {
