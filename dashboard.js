@@ -333,7 +333,8 @@ function createTokenShareBar() {
       value: '',
       alignToBottom: true,
       style: {
-        textAlign: 'center'
+        textAlign: 'center',
+        transform: null
       }
     },
     from: {color: emptyColor},
