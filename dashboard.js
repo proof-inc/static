@@ -2,56 +2,125 @@
 // CONFIG & INIT
 //
 
+// TODO
+// - KYC welcome name var
+// - psp callbacks
+// - investor parser rework
+// - referral stats
+// - kyc callback
+// - token number formatting
+// - anonymous chat?
+// - anonymous recent transaction list
+// - auth domain (https://stackoverflow.com/questions/44815580/how-to-replace-the-myapp-123-firebaseapp-com-with-my-custom-domain-myapp-com)
+
 // TODO: capitalise?
 var sliderMinInvestment = 1000;
 var sliderSalePhase = 0;
 
+// UI variables
 const strokeWidth = 25;
 const emptyColor = '#cc0000';
 const fullColor = '#26CA7B';
 const trailColor = '#CCC';
 const barTextFont = '"Raleway", Helvetica, sans-serif';
 
-const BASE_TOKEN_AMOUNT = 120 * 1000000;
-
+// variables filled by firebase
 var TOTAL_EURO_RAISED = 0;
-var TOTAL_TOKENS_SOLD = 0;
-var TOKEN_BALANCE = 0;
-var TOKEN_BONUS_BALANCE = 0;
-
-var REFERRAL_COUNT = 0;
+var EURO_INVESTED = 0;
+var INITIALIZED = false;
+var KYC_FILLED = false;
 var REFERRAL_EURO_RAISE = 0;
+var REFERRAL_INVESTOR_IDS = [];
+var LAST_INVESTMENT_TIMESTAMP = null;
+
+// constants
 const REFERRER_STORAGE_KEY = "referrer";
 const REFERRER_URL_KEY = "ref";
+const BASE_TOKEN_AMOUNT = 120 * 1000000;
+
+//
+// CREATE UI
+//
+var tokenShareBarUI = createTokenShareBarUI();
+var tokenSupplyBarUI = createTokenSupplyBarUI();
+
+// TODO: max aanpassen wanneer nieuwe investeringen gedaan worden
+createInvestmentCalcSliderUI();
+createSaleProgressCalcSliderUI();
 
 // init procedure dependent on site-wide init
 // only register
 $(window).on("load", function() {
 
+  // parse referrer and store in local storage ASAP
   parseReferrer();
 
   // callback to run when a login is detected
   onLogin(bootstrapDashboard);
 
   // callback to run when logout is detected
-  onLogout(showLoginScreen);
+  onLogout(showLoginUI);
 
   // The start method will wait until the DOM is loaded.
-  login('#dashboard-loading-overlay', isProduction()
-      ? 'https://troovebird.com/privatesale'
-    	: 'https://staging.troovebird.com/privatesale');
-
+  login('#dashboard-loading-overlay', AUTH0_CALLBACK_URL);
 });
 
-//
-// CREATE UI
-//
-var tokenShareBar = createTokenShareBar();
-var tokenSupplyBar = createTokenSupplyBar();
+function registerInvestorListener() {
+  dbEnv().ref("investors").on("value", function(investorsRef, prevChildKey) {
+    REFERRAL_INVESTOR_IDS = [];
+    investorsRef.forEach(function(investorRef) {
+      var investor = investorsRef.val();
+      var investorId = investorsRef.key;
 
-// TODO: max aanpassen wanneer nieuwe investeringen gedaan worden
-createInvestmentCalcSlider();
-createSaleProgressCalcSlider();
+      // our data
+      if (investorId == getUserId()) {
+        KYC_FILLED = investor.kycDone;
+        INITIALIZED = true;
+      }
+
+      // other investor
+      else {
+        if (investor.referrer == getUserId()) {
+          REFERRAL_INVESTOR_IDS.push(investorId);
+        }
+      }
+    });
+  });
+}
+
+//
+function registerTransactionListener() {
+  dbEnv().ref("transactions").on("child_added", function(snapshot, prevChildKey)
+  {
+    var tx = snapshot.val();
+    var timestamp = parseInt(tx.timestamp);
+    var euroAmount = parseInt(tx.euroAmount);
+    var userId = tx.userId;
+    var paymentMethod = tx.method;
+
+    // TODO: make sure it doesnt go below 0
+    TOTAL_EURO_RAISED += euroAmount;
+
+    // one of our transactions
+    if (userId == getUserId()) {
+      EURO_INVESTED += euroAmount;
+      updateInvestorEuroInvested();
+    }
+
+    // transaction for someone else. however,
+    // if we did refer them we get 2%
+    else {
+      REFERRAL_EURO_RAISE += (euroAmount * 0.02).toFixed(2);
+    }
+
+    // mark time of last investment
+    if (LAST_INVESTMENT_TIMESTAMP == null || timestamp > LAST_INVESTMENT_TIMESTAMP) {
+      LAST_INVESTMENT_TIMESTAMP = timestamp;
+    }
+
+    updateTotalEuroInvested();
+  });
+}
 
 // main init procedure
 function bootstrapDashboard()
@@ -59,7 +128,7 @@ function bootstrapDashboard()
   // set url to our own referrer for dummy sharing
   setReferrerUrl();
 
-  // bind some template vars
+  // bind some template vars based on authentication
   bindTemplateData();
 
   // manual input field for investment calc
@@ -68,20 +137,20 @@ function bootstrapDashboard()
   // init ui
   updateTokensToReceive();
 
-  // listen to changes on the euro invested field
-  registerTotalInvestmentUpdates();
-
   // back to login prompt
   registerLogoutListener();
 
   // init investor entry
   registerInvestorLoggedIn();
 
-  // hide loading screen
-  hideLoginScreen();
+  // listen to all changes and additions of investors
+  registerInvestorListener();
 
-  // listen to changes on the euro invested field
-  registerInvestorInvestmentUpdates();
+  // listen to all additions of transactions
+  registerTransactionListener();
+
+  // hide loading screen
+  hideLoginUI();
 }
 
 function logoutAndPrompt() {
@@ -91,11 +160,27 @@ function logoutAndPrompt() {
 function registerInvestorLoggedIn() {
   dbThisInvestor().once('value', function(snapshot) {
     var exists = (snapshot.val() !== null);
-    exists ? registerInvestorLastSeenTimestamp() : initInvestorData();
+    if (exists) {
+      registerInvestorMeta();
+    }
+    else {
+      initInvestorMeta();
+    }
   });
+
+  // // update login timestamps and/or referrer
+  // if (INITIALIZED) {
+  //   registerInvestorLastSeenTimestamp();
+  //   registerReferrer();
+  // }
+  // 
+  // // init data repo
+  // else {
+  //   initInvestorData();
+  // }
 }
 
-function initInvestorData() {
+function initInvestorMeta() {
   console.log("initialized entry for investor: " + getUserId());
   dbThisInvestorUserData().set({
     logins: [now()],
@@ -103,10 +188,23 @@ function initInvestorData() {
   });
 }
 
+function registerInvestorMeta() {
+  registerInvestorLastSeenTimestamp();
+  registerReferrer();
+}
+
 function registerInvestorLastSeenTimestamp() {
   dbThisInvestorUserData()
     .child("logins")
     .push(now());
+}
+
+// extra chance of registering the referrer if we already had been authenticated
+// and therefore the registration is not run
+function registerReferrer() {
+  if (hasReferrer()) {
+    dbThisInvestorReferrer().setValue(getReferrer());
+  }
 }
 
 function now() {
@@ -143,7 +241,7 @@ function hasReferrerUrl() {
 
 function hasReferrer() {
   var r = getReferrer();
-  return r != "" && r != null && r != undefined && r != "null";
+  return r != "" && r != null && r != undefined && r != "null" && r != getUserId();
 }
 
 function deleteReferrerUrl() {
@@ -183,30 +281,6 @@ function getReferrer() {
 }
 
 //
-// DB paths
-//
-
-function dbEnv() {
-  return db().ref(ENV);
-}
-
-function dbInvestors() {
-  return dbEnv().child('investors');
-}
-
-function dbThisInvestor() {
-  return dbInvestors().child(getUserId());
-}
-
-function dbThisInvestorUserData() {
-  return dbThisInvestor().child("userData");
-}
-
-function dbThisInvestorDeposits() {
-  return dbThisInvestor().child("deposits");
-}
-
-//
 // LISTENERS
 //
 
@@ -224,63 +298,11 @@ function registerManualInvestmentAmountListener() {
   });
 }
 
-// whenever the deposit array of any investor changes,
-// tally all deposit value and update stats
-function registerTotalInvestmentUpdates() {
-  dbInvestors().on('value', function(investors) {
-    updateTotalEuroInvested(totalDeposits(investors));
-  }, function(error) {console.error(error)});
-}
-
-// whenever the deposit array of this investor changes,
-// tally the deposit value and update stats
-// TODO: vervangen met enkelvoudige investorloop
-function registerInvestorInvestmentUpdates() {
-  dbThisInvestorDeposits().on('value', function(deposits) {
-    updateInvestorEuroInvested(totalInvestorDeposits(deposits));
-  }, function(error) {console.error(error)});
-}
-
-function totalDeposits(investorsSnapshot) {
-  var totalEuroInvested = 0;
-  investorsSnapshot.forEach(function(investor) {
-    totalEuroInvested += totalInvestorDeposits(investor.child('deposits'));
-  });
-  return totalEuroInvested;
-}
-
-// TODO: turn into grand investor processing loop
-// function processInvestors(investorsSnapshot) {
-//   TOTAL_EURO_RAISED = 0;
-//   REFERRAL_EURO_RAISE = 0;
-//   REFERRAL_COUNT = 0;
-//   investorsSnapshot.forEach(function(investor) {
-//     var investorEuroAmount = totalInvestorDeposits(investor.child('deposits'));
-//     TOTAL_EURO_RAISED += investorEuroAmount;
-//     if (investor.ref("userData/referrer").val() == getUserId()) {
-//       REFERRAL_COUNT++;
-//       REFERRAL_EURO_RAISE += investorEuroAmount;
-//     }
-//   });
-// }
-
-function totalInvestorDeposits(depositsSnapshot) {
-  var totalEuroInvested = 0;
-  depositsSnapshot.forEach(function(deposit){
-    totalEuroInvested += deposit.child('euroAmount').val();
-  });
-  return totalEuroInvested;
-}
-
-function checkInvestorReferral(investorSnapshot) {
-
-}
-
 //
 // UI factories
 //
 
-function createSaleProgressCalcSlider() {
+function createSaleProgressCalcSliderUI() {
   $("#sale-phase-slider").ionRangeSlider({
     min: 0,
     max: 100,
@@ -293,7 +315,7 @@ function createSaleProgressCalcSlider() {
   });
 }
 
-function createInvestmentCalcSlider() {
+function createInvestmentCalcSliderUI() {
   $("#investment-slider").ionRangeSlider({
     min: 1000,
     step: 5000,
@@ -309,7 +331,7 @@ function createInvestmentCalcSlider() {
   });
 }
 
-function barBaseOptions() {
+function barBaseUIOptions() {
   return {
     strokeWidth: strokeWidth,
     trailColor: trailColor,
@@ -332,8 +354,8 @@ function barBaseOptions() {
   }
 }
 
-function createTokenShareBar() {
-  return new ProgressBar.SemiCircle('#progress-share-percentage', deepmerge(barBaseOptions(), {
+function createTokenShareBarUI() {
+  return new ProgressBar.SemiCircle('#progress-share-percentage', deepmerge(barBaseUIOptions(), {
     color: '#333',
     text: {
       value: '',
@@ -352,7 +374,7 @@ function createTokenShareBar() {
       bar.path.setAttribute('stroke', state.color);
       var value = Math.round(bar.value() * 100);
       if (value > 1) {
-        bar.setText(value = '%');
+        bar.setText(value + '%');
       }
       else {
         bar.setText("0%");
@@ -363,40 +385,9 @@ function createTokenShareBar() {
   }));
 }
 
-// function createTokenSupplyBar() {
-//   return new ProgressBar.Line('#token-supply-left-progress', $.extend(true, barBaseOptions(), {
-//     color: '#F8BC3F',
-//     trailColor: 'fff',
-//     svgStyle: {width: '100%', height: '100%'},
-//     text: {
-//       style: {
-//         color: '#333',
-//         //position: 'absolute',
-//         //right: '0',
-//         //top: '50px',
-//         "text-align": "center",
-//         padding: 0,
-//         margin: '-25px',
-//         "font-size": "50px",
-//         "font-weight": "bold",
-//         // transform: null,
-//       },
-//       autoStyleContainer: false
-//     },
-//     from: {color: emptyColor},
-//     to: {color: fullColor},
-//     step: (state, bar) => {
-//       bar.setText(Math.round(bar.value() * 100) + ' %');
-//       bar.path.setAttribute('stroke', state.color);
-//     }
-//   }));
-// }
-
-function createTokenSupplyBar() {
-  return new ProgressBar.Circle('#token-supply-left-progress', deepmerge(barBaseOptions(), {
+function createTokenSupplyBarUI() {
+  return new ProgressBar.Circle('#token-supply-left-progress', deepmerge(barBaseUIOptions(), {
     color: '#F8BC3F',
-    // This has to be the same size as the maximum width to
-    // prevent clipping
     strokeWidth: 10,
     trailWidth: 10,
     easing: 'easeInOut',
@@ -447,12 +438,12 @@ function bindTemplateData() {
   bindKYCFormEmail();
 }
 
-function hideLoginScreen() {
+function hideLoginUI() {
   $("#dashboard-loading-overlay").hide();
   $("#protected-content-container").show();
 }
 
-function showLoginScreen() {
+function showLoginUI() {
   $("#dashboard-loading-overlay").show();
   $("#protected-content-container").hide();
 }
@@ -465,8 +456,24 @@ function updateTokensToReceive() {
   $("#investment-manual-amount").val(sliderMinInvestment);
 };
 
+function numTokensSold() {
+  return euroToTokenAmount(Math.max(0, TOTAL_EURO_RAISED))
+}
+
+function numTokenBalance() {
+  return euroToTokenAmount(Math.max(0, EURO_INVESTED));
+}
+
+function numTokenBonusBalance() {
+  return tokenBonusAmount(numTokenBalance());
+}
+
+function numReferralSignups() {
+  return REFERRAL_INVESTOR_IDS.length;
+}
+
 function tokensSaleAvailable() {
-  return BASE_TOKEN_AMOUNT - TOTAL_TOKENS_SOLD;
+  return BASE_TOKEN_AMOUNT - numTokensSold();
 }
 
 function percentageOf(fraction, total) {
@@ -479,7 +486,7 @@ function percentTotalSupply(tokenAmount) {
 }
 
 function percentSoldSupply(tokenAmount) {
-  return percentageOf(tokenAmount, TOTAL_TOKENS_SOLD);
+  return percentageOf(tokenAmount, numTokensSold());
 }
 
 function tokenBonusAmount(tokenAmount, totalTokensSold) {
@@ -512,45 +519,55 @@ function getBonusModifier(totalTokensSold) {
   return bonusModifier;
 }
 
-function updateInvestorEuroInvested(amount) {
-  // var shareModifier = percentTotalSupply(tokenAmount) / 100;
-  TOKEN_BALANCE = euroToTokenAmount(Math.max(0, amount));
-  TOKEN_BONUS_BALANCE = tokenBonusAmount(TOKEN_BALANCE);
-  updateInvestorSoldSupplyShare();
-  updateTokenBalance();
-  updateTokenBonusBalance();
+function updateEuroInvested() {
+  updateInvestorEuroInvested();
+  updateTotalEuroInvested();
 }
 
-function updateTokenBalance() {
-  $('#balance-total').animateNumber({ number: TOKEN_BALANCE });
-}
-
-function updateTokenBonusBalance() {
-  $('#bonus-total').animateNumber({ number: TOKEN_BONUS_BALANCE });
-}
-
-function updateInvestorSoldSupplyShare() {
-  var shareModifier = percentSoldSupply(TOKEN_BALANCE) / 100;
-  tokenShareBar.animate(shareModifier || 0);
-}
-
-function updateTotalEuroInvested(amount) {
-  TOTAL_TOKENS_SOLD = euroToTokenAmount(Math.max(0, amount));
-  updateTotalSupplyBar();
-  updateInvestorSoldSupplyShare();
-}
-
-function updateTotalSupplyBar() {
-  var modifier = percentTotalSupply(TOTAL_TOKENS_SOLD) / 100;
-  tokenSupplyBar.animate(1 - modifier);
-}
-
-function totalInvestorTokenAmount() {
-  return TOKEN_BALANCE + TOKEN_BONUS_BALANCE;
+function updateInvestorEuroInvested() {
+  updateSupplyShareUI();
+  updateTokenBalanceUI();
+  updateTokenBonusBalanceUI();
 }
 
 function euroToTokenAmount(euroAmount) {
   return euroAmount * 4;
+}
+
+function updateTokenBalanceUI() {
+  updateTokenStatBalance('#balance-total', numTokenBalance());
+}
+
+function updateTokenBonusBalanceUI() {
+  updateTokenStatBalance('#bonus-total', numTokenBonusBalance());
+}
+
+function totalInvestorTokenAmount() {
+  return numTokenBalance() + numTokenBonusBalance();
+}
+
+function updateTokenStatBalance(selector, newValue) {
+  $(id).animateNumber({ number: newValue });
+}
+
+// function updateTokenBarUI(barUI, num, ) {
+//   var shareModifier = percentSoldSupply(numTokenBalance()) / 100;
+//   tokenShareBarUI.animate(shareModifier || 0);
+// }
+
+function updateTotalEuroInvested() {
+  updateSupplyBarUI();
+  updateSupplyShareUI();
+}
+
+function updateSupplyShareUI() {
+  var shareModifier = percentSoldSupply(numTokenBalance()) / 100;
+  tokenShareBarUI.animate(shareModifier || 0);
+}
+
+function updateTotalSupplyBarUI() {
+  var modifier = percentTotalSupply(numTokensSold()) / 100;
+  tokenSupplyBarUI.animate(1 - modifier);
 }
 
 function showError(code, message) {
@@ -558,6 +575,38 @@ function showError(code, message) {
   $("#dashboard-overlay-error-message").text(message);
   $("#dashboard-error-overlay").removeClass("hidden");
 }
+
+//
+// DB paths
+//
+
+function dbEnv() {
+  return db().ref(ENV);
+}
+
+function dbInvestors() {
+  return dbEnv().child('investors');
+}
+
+function dbThisInvestor() {
+  return dbInvestors().child(getUserId());
+}
+
+function dbThisInvestorUserData() {
+  return dbThisInvestor().child("userData");
+}
+
+function dbThisInvestorReferrer() {
+  return dbThisInvestorUserData().child("referrer");
+}
+
+function dbThisInvestorDeposits() {
+  return dbThisInvestor().child("deposits");
+}
+
+//
+// Support
+//
 
 var _support = _support || { 'ui': {}, 'user': {} };
 _support['account'] = 'troovebird';
