@@ -66,7 +66,7 @@ $(window).on("load", function() {
 });
 
 function registerInvestorListener() {
-  dbEnv().ref("investors").on("value", function(investorsRef, prevChildKey) {
+  dbInvestors().on("value", function(investorsRef, prevChildKey) {
     REFERRAL_INVESTOR_IDS = [];
     investorsRef.forEach(function(investorRef) {
       var investor = investorsRef.val();
@@ -90,7 +90,7 @@ function registerInvestorListener() {
 
 //
 function registerTransactionListener() {
-  dbEnv().ref("transactions").on("child_added", function(snapshot, prevChildKey)
+  dbTransactions().on("child_added", function(snapshot, prevChildKey)
   {
     var tx = snapshot.val();
     var timestamp = parseInt(tx.timestamp);
@@ -173,7 +173,7 @@ function registerInvestorLoggedIn() {
   //   registerInvestorLastSeenTimestamp();
   //   registerReferrer();
   // }
-  // 
+  //
   // // init data repo
   // else {
   //   initInvestorData();
@@ -582,6 +582,10 @@ function showError(code, message) {
 
 function dbEnv() {
   return db().ref(ENV);
+}
+
+function dbTransactions() {
+  return dbEnv.child('transactions');
 }
 
 function dbInvestors() {
