@@ -109,7 +109,7 @@ function registerTransactionListener() {
 
     // transaction for someone else. however,
     // if we did refer them we get 2%
-    else {
+    else if (isInvestorOurReferral(userId)) {
       REFERRAL_EURO_RAISE += (euroAmount * 0.02).toFixed(2);
     }
 
@@ -148,6 +148,9 @@ function bootstrapDashboard()
 
   // listen to all additions of transactions
   registerTransactionListener();
+
+  // reset meters
+  updateEuroInvested();
 
   // hide loading screen
   hideLoginUI();
@@ -519,6 +522,14 @@ function getBonusModifier(totalTokensSold) {
   return bonusModifier;
 }
 
+function isInvestorOurReferral(id) {
+  return REFERRAL_INVESTOR_IDS.includes(id);
+}
+
+function euroToTokenAmount(euroAmount) {
+  return euroAmount * 4;
+}
+
 function updateEuroInvested() {
   updateInvestorEuroInvested();
   updateTotalEuroInvested();
@@ -530,8 +541,9 @@ function updateInvestorEuroInvested() {
   updateTokenBonusBalanceUI();
 }
 
-function euroToTokenAmount(euroAmount) {
-  return euroAmount * 4;
+function updateTotalEuroInvested() {
+  updateSupplyBarUI();
+  updateSupplyShareUI();
 }
 
 function updateTokenBalanceUI() {
@@ -554,11 +566,6 @@ function updateTokenStatBalance(selector, newValue) {
 //   var shareModifier = percentSoldSupply(numTokenBalance()) / 100;
 //   tokenShareBarUI.animate(shareModifier || 0);
 // }
-
-function updateTotalEuroInvested() {
-  updateSupplyBarUI();
-  updateSupplyShareUI();
-}
 
 function updateSupplyShareUI() {
   var shareModifier = percentSoldSupply(numTokenBalance()) / 100;
