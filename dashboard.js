@@ -84,6 +84,9 @@ function registerInvestorListener() {
           REFERRAL_INVESTOR_IDS.push(investorId);
         }
       }
+
+      // TODO: trigger rewalking transactions if we find out about a
+      // new referral we made?
     });
   });
 }
@@ -111,6 +114,7 @@ function registerTransactionListener() {
     // if we did refer them we get 2%
     else if (isInvestorOurReferral(userId)) {
       REFERRAL_EURO_RAISE += (euroAmount * 0.02).toFixed(2);
+      updateReferralStats();
     }
 
     // mark time of last investment
@@ -434,10 +438,16 @@ function bindKYCFormEmail() {
   );
 }
 
+function bindReferralStats() {
+  $("#dashboard-ref-count").text(numReferralSignups());
+  $("#dashboard-ref-commission").text(REFERRAL_EURO_RAISE);
+}
+
 function bindTemplateData() {
   bindWelcomeName();
   bindReferralButtonUrl();
   bindReferralLink();
+  bindReferralStats();
   bindKYCFormEmail();
 }
 
@@ -546,19 +556,23 @@ function updateTotalEuroInvested() {
   updateSupplyShareUI();
 }
 
+function updateReferralStats() {
+  bindReferralStats();
+}
+
 function updateTokenBalanceUI() {
-  updateTokenStatBalance('#balance-total', numTokenBalance());
+  updateTokenStatBalanceUI('#balance-total', numTokenBalance());
 }
 
 function updateTokenBonusBalanceUI() {
-  updateTokenStatBalance('#bonus-total', numTokenBonusBalance());
+  updateTokenStatBalanceUI('#bonus-total', numTokenBonusBalance());
 }
 
 function totalInvestorTokenAmount() {
   return numTokenBalance() + numTokenBonusBalance();
 }
 
-function updateTokenStatBalance(selector, newValue) {
+function updateTokenStatBalanceUI(selector, newValue) {
   $(selector).animateNumber({ number: newValue });
 }
 
