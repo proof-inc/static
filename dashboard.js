@@ -572,7 +572,7 @@ function updateSupplyShareUI() {
   tokenShareBarUI.animate(shareModifier || 0);
 }
 
-function updateTotalSupplyBarUI() {
+function updateSupplyBarUI() {
   var modifier = percentTotalSupply(numTokensSold()) / 100;
   tokenSupplyBarUI.animate(1 - modifier);
 }
