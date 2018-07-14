@@ -585,7 +585,7 @@ function dbEnv() {
 }
 
 function dbTransactions() {
-  return dbEnv.child('transactions');
+  return dbEnv().child('transactions');
 }
 
 function dbInvestors() {
