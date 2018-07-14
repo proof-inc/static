@@ -559,7 +559,7 @@ function totalInvestorTokenAmount() {
 }
 
 function updateTokenStatBalance(selector, newValue) {
-  $(id).animateNumber({ number: newValue });
+  $(selector).animateNumber({ number: newValue });
 }
 
 // function updateTokenBarUI(barUI, num, ) {
