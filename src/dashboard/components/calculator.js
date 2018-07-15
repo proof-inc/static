@@ -1,4 +1,5 @@
 import State from '../state';
+import ionRangeSlider from 'ion-rangeslider';
 
 // TODO: capitalise?
 var sliderMinInvestment = 1000;

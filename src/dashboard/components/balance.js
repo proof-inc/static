@@ -1,6 +1,7 @@
 import State from '../state';
 import UI from '../ui';
 import merge from 'deepmerge';
+import ProgressBar from 'progressbar.js';
 
 var tokenShareBarUI = null;
 
