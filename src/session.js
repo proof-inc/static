@@ -1,4 +1,5 @@
 // Initialize Firebase
+// TODO: pull
 firebase.initializeApp({
   apiKey: DASHBOARD_API_KEY,
   authDomain: DASHBOARD_AUTH_DOMAIN,
@@ -83,6 +84,10 @@ function dbAuth() {
   return firebase.auth();
 }
 
+function dbEnv() {
+  return db().ref(ENV);
+}
+
 function getFirebaseUiConfig(signInUrl) {
   return {
     signInSuccessUrl: signInUrl,
@@ -109,6 +114,10 @@ function setFirebaseSession(userObj) {
   // localStorage.setItem('locale', authResult.idTokenPayload.locale);
   localStorage.setItem('avatar', userObj.photoURL);
   localStorage.setItem('user_id', userObj.uid);
+}
+
+function isCurrentUser(id) {
+  return id == getUserId();
 }
 
 function getUserId() {
@@ -169,14 +178,8 @@ function redirectToDashboardOnLogout() {
   onLogout(redirectToDashboard);
 }
 
-// TODO: vervangen met veilige hash
-String.prototype.hashCode = function(){
-  var hash = 0;
-  if (this.length == 0) return hash;
-  for (i = 0; i < this.length; i++) {
-    char = this.charCodeAt(i);
-    hash = ((hash<<5)-hash)+char;
-    hash = hash & hash; // Convert to 32bit integer
-  }
-  return hash;
-}
+export {
+  onLogin, onLogout, login, logout, redirectToDashboardOnLogout,
+  db, isAuthenticated,
+  getUserId, getUserIdHash, getEmail, getName, getAvatar
+};

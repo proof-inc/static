@@ -1,0 +1,26 @@
+{
+  "name": "troovebird-investor-dashboard",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack --mode development"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/proof-inc/static.git"
+  },
+  "author": "Luuk de Waal Malefijt",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/proof-inc/static/issues"
+  },
+  "homepage": "https://github.com/proof-inc/static#readme",
+  "dependencies": {
+    "webpack": "^4.16.0"
+  },
+  "devDependencies": {
+    "webpack-cli": "^3.0.8",
+    "webpack-merge-and-include-globally": "^2.0.11"
+  }
+}
