@@ -124,12 +124,12 @@ function parseInvestors(investorsSnapshot) {
 
 // parse transactiosn given a snapshot
 function parseTransaction(transactionSnapshot) {
-  console.log("parsing transaction " + transactionSnapshot.toJSON());
+  console.log("parsing transaction ", transactionSnapshot.toJSON());
 
   var tx = transactionSnapshot.val();
   var timestamp = parseInt(tx.timestamp);
   var euroAmount = parseInt(tx.euroAmount);
-  var userId = tx.userId;
+  var userId = tx.investorId;
   var paymentMethod = tx.method;
 
   // TODO: make sure it doesnt go below 0
@@ -227,7 +227,7 @@ function registerInvestorLoggedIn() {
 }
 
 function initInvestorMeta() {
-  console.log("initialized entry for investor: " + getUserId());
+  console.log("initialized entry for investor: ", getUserId());
   dbThisInvestorUserData().set({
     referrer: getReferrer()
   });
@@ -314,7 +314,7 @@ function resetReferrer() {
 
 function setReferrer(ref) {
   localStorage.setItem(REFERRER_STORAGE_KEY, (ref != getUserId()) ? ref : "");
-  console.info("Referrer set: " + ref);
+  console.info("Referrer set: ", ref);
   return getReferrer();
 }
 
