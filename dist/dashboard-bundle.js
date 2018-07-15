@@ -506,11 +506,11 @@ eval("__webpack_require__.r(__webpack_exports__);\n/* harmony import */ var _ind
 /*!************************************!*\
   !*** ./src/dashboard/constants.js ***!
   \************************************/
-/*! exports provided: default */
+/*! exports provided: BASE_TOKEN_AMOUNT, EURO_PRICE_PER_TOKEN, REFERRAL_PERCENT_FEE */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-eval("__webpack_require__.r(__webpack_exports__);\nconst BASE_TOKEN_AMOUNT = 120 * 1000000;\nconst EURO_PRICE_PER_TOKEN = 0.25;\nconst REFERRAL_PERCENT_FEE = 2;\n\n/* harmony default export */ __webpack_exports__[\"default\"] = ({BASE_TOKEN_AMOUNT, EURO_PRICE_PER_TOKEN, REFERRAL_PERCENT_FEE});\n\n\n//# sourceURL=webpack:///./src/dashboard/constants.js?");
+eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, \"BASE_TOKEN_AMOUNT\", function() { return BASE_TOKEN_AMOUNT; });\n/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, \"EURO_PRICE_PER_TOKEN\", function() { return EURO_PRICE_PER_TOKEN; });\n/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, \"REFERRAL_PERCENT_FEE\", function() { return REFERRAL_PERCENT_FEE; });\nconst BASE_TOKEN_AMOUNT = 120 * 1000000;\nconst EURO_PRICE_PER_TOKEN = 0.25;\nconst REFERRAL_PERCENT_FEE = 2;\n\n\n//# sourceURL=webpack:///./src/dashboard/constants.js?");
 
 /***/ }),
 
