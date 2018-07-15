@@ -1,5 +1,8 @@
 import State from '../state';
-import ionRangeSlider from 'ion-rangeslider';
+import {BASE_TOKEN_AMOUNT, EURO_PRICE_PER_TOKEN, REFERRAL_PERCENT_FEE} from '../constants';
+
+// TODO: make this work
+// import ionRangeSlider from 'ion-rangeslider';
 
 // TODO: capitalise?
 var sliderMinInvestment = 1000;

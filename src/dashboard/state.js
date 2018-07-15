@@ -1,9 +1,5 @@
 import Util from '../util';
-
-// constants
-const BASE_TOKEN_AMOUNT = 120 * 1000000;
-const EURO_PRICE_PER_TOKEN = 0.25;
-const REFERRAL_PERCENT_FEE = 2;
+import {BASE_TOKEN_AMOUNT, EURO_PRICE_PER_TOKEN, REFERRAL_PERCENT_FEE} from './constants';
 
 // the total sum of contributions
 var TOTAL_EURO_RAISED = 0;
@@ -33,6 +29,10 @@ export default {
     EURO_INVESTED = 0;
     REFERRAL_INVESTOR_IDS = [];
     REFERRAL_TRANSACTIONS = [];
+  },
+
+  numBaseTokenAmount: function() {
+    return BASE_TOKEN_AMOUNT;
   },
 
   numTokensSold: function() {
