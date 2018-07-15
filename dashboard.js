@@ -65,65 +65,75 @@ $(window).on("load", function() {
   login('#dashboard-loading-overlay', AUTH0_CALLBACK_URL);
 });
 
+// whenever any investor data changes, reparse
 function registerInvestorListener() {
-  dbInvestors().on("value", function(investorsRef, prevChildKey) {
-    REFERRAL_INVESTOR_IDS = [];
-    investorsRef.forEach(function(investorRef) {
-      var investor = investorsRef.val();
-      var investorId = investorsRef.key;
+  dbInvestors().on("value", parseInvestors);
+}
 
-      // our data
-      if (investorId == getUserId()) {
-        KYC_FILLED = investor.kycDone;
-        INITIALIZED = true;
+// reparse all transactions when a new one occurs
+function registerTransactionListener() {
+  dbTransactions().on("child_added", parseTransactions);
+}
+
+// manually trigger parsing transactions
+function triggerParseTransactions() {
+  dbTransactions().once("value", parseTransactions);
+}
+
+function parseInvestors(investorsSnapshot) {
+  REFERRAL_INVESTOR_IDS = [];
+  investorsSnapshot.forEach(function(investorRef) {
+    var investor = investorsRef.val();
+    var investorId = investorsRef.key;
+
+    // our data
+    if (investorId == getUserId()) {
+      KYC_FILLED = investor.kycDone;
+      INITIALIZED = true;
+    }
+
+    // other investor
+    else {
+      if (investor.referrer == getUserId()) {
+        REFERRAL_INVESTOR_IDS.push(investorId);
       }
+    }
 
-      // other investor
-      else {
-        if (investor.referrer == getUserId()) {
-          REFERRAL_INVESTOR_IDS.push(investorId);
-        }
-      }
-
-      // TODO: trigger rewalking transactions if we find out about a
-      // new referral we made?
-    });
+    // TODO: trigger rewalking transactions if we find out about a
+    // new referral we made?
   });
 }
 
-//
-function registerTransactionListener() {
-  dbTransactions().on("child_added", function(snapshot, prevChildKey)
-  {
-    var tx = snapshot.val();
-    var timestamp = parseInt(tx.timestamp);
-    var euroAmount = parseInt(tx.euroAmount);
-    var userId = tx.userId;
-    var paymentMethod = tx.method;
+// parse transactiosn given a snapshot
+function parseTransactions(transactionsSnapshot) {
+  var tx = transactionsSnapshot.val();
+  var timestamp = parseInt(tx.timestamp);
+  var euroAmount = parseInt(tx.euroAmount);
+  var userId = tx.userId;
+  var paymentMethod = tx.method;
 
-    // TODO: make sure it doesnt go below 0
-    TOTAL_EURO_RAISED += euroAmount;
+  // TODO: make sure it doesnt go below 0
+  TOTAL_EURO_RAISED += euroAmount;
 
-    // one of our transactions
-    if (userId == getUserId()) {
-      EURO_INVESTED += euroAmount;
-      updateInvestorEuroInvested();
-    }
+  // one of our transactions
+  if (userId == getUserId()) {
+    EURO_INVESTED += euroAmount;
+    updateInvestorEuroInvested();
+  }
 
-    // transaction for someone else. however,
-    // if we did refer them we get 2%
-    else if (isInvestorOurReferral(userId)) {
-      REFERRAL_EURO_RAISE += (euroAmount * 0.02).toFixed(2);
-      updateReferralStats();
-    }
+  // transaction for someone else. however,
+  // if we did refer them we get 2%
+  else if (isInvestorOurReferral(userId)) {
+    REFERRAL_EURO_RAISE += (euroAmount * 0.02).toFixed(2);
+    updateReferralStats();
+  }
 
-    // mark time of last investment
-    if (LAST_INVESTMENT_TIMESTAMP == null || timestamp > LAST_INVESTMENT_TIMESTAMP) {
-      LAST_INVESTMENT_TIMESTAMP = timestamp;
-    }
+  // mark time of last investment
+  if (LAST_INVESTMENT_TIMESTAMP == null || timestamp > LAST_INVESTMENT_TIMESTAMP) {
+    LAST_INVESTMENT_TIMESTAMP = timestamp;
+  }
 
-    updateTotalEuroInvested();
-  });
+  updateTotalEuroInvested();
 }
 
 // main init procedure
@@ -161,7 +171,7 @@ function bootstrapDashboard()
 }
 
 function logoutAndPrompt() {
-  logout(showLoginScreen); // side-wide function of clearing session
+  logout(showLoginUI); // side-wide function of clearing session
 }
 
 function registerInvestorLoggedIn() {
@@ -190,9 +200,9 @@ function registerInvestorLoggedIn() {
 function initInvestorMeta() {
   console.log("initialized entry for investor: " + getUserId());
   dbThisInvestorUserData().set({
-    logins: [now()],
     referrer: getReferrer()
   });
+  registerInvestorLastSeenTimestamp();
 }
 
 function registerInvestorMeta() {
@@ -201,9 +211,12 @@ function registerInvestorMeta() {
 }
 
 function registerInvestorLastSeenTimestamp() {
-  dbThisInvestorUserData()
+  dbEnv()
     .child("logins")
-    .push(now());
+    .push({
+      timestamp: now(),
+      investor: getUserId()
+    });
 }
 
 // extra chance of registering the referrer if we already had been authenticated
