@@ -18,7 +18,7 @@ function hasReferrerUrl() {
 
 function hasReferrer() {
   var r = getReferrer();
-  return r != "" && r != null && r != undefined && r != "null" && r != getUserId();
+  return r != "" && r != null && r != undefined && r != "null" && r != Session.getUserId();
 }
 
 function deleteReferrerUrl() {
