@@ -24,13 +24,25 @@ const fullColor = '#26CA7B';
 const trailColor = '#CCC';
 const barTextFont = '"Raleway", Helvetica, sans-serif';
 
-// variables filled by firebase
+// the total sum of contributions
 var TOTAL_EURO_RAISED = 0;
+
+// the amont this user account invested
 var EURO_INVESTED = 0;
+
+// whether a registration was done for this user account
 var INITIALIZED = false;
+
+// whether we detected the KYC form to have been completed
 var KYC_FILLED = false;
-var REFERRAL_EURO_RAISE = 0;
+
+// the investor ids of people referred by this account
 var REFERRAL_INVESTOR_IDS = [];
+
+// transactions done by people referred by this account
+var REFERRAL_TRANSACTIONS = [];
+
+// timestamp of last investment done
 var LAST_INVESTMENT_TIMESTAMP = null;
 
 // constants
@@ -72,7 +84,7 @@ function registerInvestorListener() {
 
 // reparse all transactions when a new one occurs
 function registerTransactionListener() {
-  dbTransactions().on("child_added", parseTransactions);
+  dbTransactions().on("child_added", parseTransaction);
 }
 
 // manually trigger parsing transactions
@@ -81,10 +93,11 @@ function triggerParseTransactions() {
 }
 
 function parseInvestors(investorsSnapshot) {
-  REFERRAL_INVESTOR_IDS = [];
+  console.log("parsing investors");
+  NEW_REFERRAL_INVESTOR_IDS = [];
   investorsSnapshot.forEach(function(investorRef) {
-    var investor = investorsRef.val();
-    var investorId = investorsRef.key;
+    var investor = investorRef.val();
+    var investorId = investorRef.key;
 
     // our data
     if (investorId == getUserId()) {
@@ -95,18 +108,25 @@ function parseInvestors(investorsSnapshot) {
     // other investor
     else {
       if (investor.referrer == getUserId()) {
-        REFERRAL_INVESTOR_IDS.push(investorId);
+        NEW_REFERRAL_INVESTOR_IDS.push(investorId);
       }
     }
-
-    // TODO: trigger rewalking transactions if we find out about a
-    // new referral we made?
   });
+
+  // suppose an investor had been registered but the referral id
+  // only catches on later. then the investor list changes,
+  // but we need to rescan transactions to count referrals
+  if (!arrayEqual(NEW_REFERRAL_INVESTOR_IDS, REFERRAL_INVESTOR_IDS)) {
+    REFERRAL_INVESTOR_IDS = NEW_REFERRAL_INVESTOR_IDS;
+    triggerParseTransactions();
+  }
 }
 
 // parse transactiosn given a snapshot
-function parseTransactions(transactionsSnapshot) {
-  var tx = transactionsSnapshot.val();
+function parseTransaction(transactionSnapshot) {
+  console.log("parsing transaction " + transactionSnapshot.toJSON());
+
+  var tx = transactionSnapshot.val();
   var timestamp = parseInt(tx.timestamp);
   var euroAmount = parseInt(tx.euroAmount);
   var userId = tx.userId;
@@ -124,7 +144,7 @@ function parseTransactions(transactionsSnapshot) {
   // transaction for someone else. however,
   // if we did refer them we get 2%
   else if (isInvestorOurReferral(userId)) {
-    REFERRAL_EURO_RAISE += (euroAmount * 0.02).toFixed(2);
+    REFERRAL_TRANSACTIONS.push(tx);
     updateReferralStats();
   }
 
@@ -134,6 +154,15 @@ function parseTransactions(transactionsSnapshot) {
   }
 
   updateTotalEuroInvested();
+}
+
+// parse transactiosn given a snapshot
+function parseTransactions(transactionsSnapshot) {
+  console.log("parsing transactions");
+  TOTAL_EURO_RAISED = 0;
+  EURO_INVESTED = 0;
+  REFERRAL_TRANSACTIONS = [];
+  transactionsSnapshot.forEach(parseTransaction);
 }
 
 // main init procedure
@@ -229,6 +258,17 @@ function registerReferrer() {
 
 function now() {
   return (+ new Date());
+}
+
+function arrayEqual(arr1, arr2) {
+  arr1.sort(); arr2.sort();
+  if (arr1.length != arr2.length) return false;
+  for (var i = 0; i < arr1.length; i++) {
+    if (arr1[i] !== arr2[i]) {
+      return false;
+    }
+  }
+  return true;
 }
 
 //
@@ -453,7 +493,7 @@ function bindKYCFormEmail() {
 
 function bindReferralStats() {
   $("#dashboard-ref-count").text(numReferralSignups());
-  $("#dashboard-ref-commission").text(REFERRAL_EURO_RAISE);
+  $("#dashboard-ref-commission").text(numReferralCommissionAmount());
 }
 
 function bindTemplateData() {
@@ -496,6 +536,14 @@ function numTokenBonusBalance() {
 
 function numReferralSignups() {
   return REFERRAL_INVESTOR_IDS.length;
+}
+
+function numReferralCommissionAmount() {
+  var commission = 0;
+  REFERRAL_TRANSACTIONS.forEach(function(tx) {
+    commission += (tx.euroAmount * 0.02).toFixed(2);
+  });
+  return commission;
 }
 
 function tokensSaleAvailable() {
