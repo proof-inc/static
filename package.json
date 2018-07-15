@@ -4,7 +4,8 @@
   "description": "",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "webpack --mode development"
+    "build": "webpack --mode development",
+    "commit": "npm run build && git add . && git commit -a && git push"
   },
   "repository": {
     "type": "git",

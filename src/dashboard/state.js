@@ -2,6 +2,8 @@ import Util from '../util';
 
 // constants
 const BASE_TOKEN_AMOUNT = 120 * 1000000;
+const EURO_PRICE_PER_TOKEN = 0.25;
+const REFERRAL_PERCENT_FEE = 2;
 
 // the total sum of contributions
 var TOTAL_EURO_RAISED = 0;
@@ -52,7 +54,7 @@ export default {
   numReferralCommissionAmount: function() {
     var commission = 0;
     REFERRAL_TRANSACTIONS.forEach(function(tx) {
-      commission += (tx.euroAmount * 0.02).toFixed(2);
+      commission += (tx.euroAmount * referralFeeModifier).toFixed(2);
     });
     return commission;
   },
@@ -85,12 +87,20 @@ export default {
     return false;
   },
 
+  referralFeeModifier: function() {
+    return REFERRAL_PERCENT_FEE / 100;
+  },
+
   isInvestorOurReferral: function(id) {
     return getReferralInvestorIds().includes(id);
   },
 
   tokensSaleAvailable: function() {
     return BASE_TOKEN_AMOUNT - numTokensSold();
+  },
+
+  euroSaleAvailable: function() {
+    return tokensSaleAvailable() * EURO_PRICE_PER_TOKEN;
   },
 
   processTx: function(investorId, amount, timestamp, tx) {
@@ -159,6 +169,6 @@ export default {
   },
 
   euroToTokenAmount: function(euroAmount) {
-    return euroAmount * 4;
+    return euroAmount / EURO_PRICE_PER_TOKEN;
   }
 };

@@ -52,7 +52,7 @@ function createInvestmentCalcSliderUI() {
     min: 1000,
     step: 5000,
     grid: true,
-    max: tokensSaleAvailable()/4,
+    max: State.euroSaleAvailable(),
     from: sliderMinInvestment,
     prefix: '€',
 
