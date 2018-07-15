@@ -125,7 +125,7 @@ export default {
   },
 
   percentTotalSupply: function(tokenAmount) {
-    return this.percentageOf(tokenAmount, BASE_TOKEN_AMOUNT);
+    return Util.percentageOf(tokenAmount, BASE_TOKEN_AMOUNT);
   },
 
   // what the amoutn of tokens is relative to total supply
@@ -135,7 +135,7 @@ export default {
   },
 
   percentSoldSupply: function(tokenAmount) {
-    return this.percentageOf(tokenAmount, this.numTokensSold());
+    return Util.percentageOf(tokenAmount, this.numTokensSold());
   },
 
   tokenBonusAmount: function(tokenAmount, totalTokensSold) {
