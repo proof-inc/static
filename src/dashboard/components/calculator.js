@@ -62,4 +62,4 @@ function createInvestmentCalcSliderUI() {
   });
 }
 
-export {init, update};
+export default {init, update};

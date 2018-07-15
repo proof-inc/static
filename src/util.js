@@ -34,4 +34,4 @@ String.prototype.hashCode = function(){
   return hashCode(this);
 }
 
-export {now, arrayEqual, percentageOf, hashCode};
+export default {now, arrayEqual, percentageOf, hashCode};

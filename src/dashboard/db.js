@@ -3,7 +3,7 @@ import Session from '../session';
 import Referrer from './referrer';
 import Util from '../util';
 
-module.exports = {
+export default {
 
   init: function() {
     registerInvestorLoggedIn();
@@ -135,7 +135,7 @@ module.exports = {
 
   dbEnv: function() {
     return Session.dbEnv();
-  }
+  },
 
   dbTransactions: function() {
     return dbEnv().child('transactions');

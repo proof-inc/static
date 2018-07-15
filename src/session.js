@@ -178,7 +178,7 @@ function redirectToDashboardOnLogout() {
   onLogout(redirectToDashboard);
 }
 
-export {
+export default {
   onLogin, onLogout, login, logout, redirectToDashboardOnLogout,
   db, isAuthenticated,
   getUserId, getUserIdHash, getEmail, getName, getAvatar

@@ -1,6 +1,6 @@
 import Dashboard from '../index';
 import Session from '../../session';
-import State from '../business';
+import State from '../state';
 
 function bindReferralButtonUrl() {
   $("#referral-button").attr("href", "/privatesale/" + Session.getUserId());
@@ -44,4 +44,4 @@ function bindTemplateData() {
   bindKYCFormEmail();
 }
 
-export {bindTemplateData};
+export default {bindTemplateData};

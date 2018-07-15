@@ -24,7 +24,7 @@ var REFERRAL_TRANSACTIONS = [];
 // timestamp of last investment done
 var LAST_INVESTMENT_TIMESTAMP = null;
 
-module.exports = {
+export default {
 
   reset: function() {
     TOTAL_EURO_RAISED = 0;
@@ -87,7 +87,7 @@ module.exports = {
 
   isInvestorOurReferral: function(id) {
     return getReferralInvestorIds().includes(id);
-  }
+  },
 
   tokensSaleAvailable: function() {
     return BASE_TOKEN_AMOUNT - numTokensSold();

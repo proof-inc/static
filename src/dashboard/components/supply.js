@@ -48,4 +48,4 @@ function createTokenSupplyBarUI() {
   }));
 }
 
-export {init, update};
+export default {init, update};

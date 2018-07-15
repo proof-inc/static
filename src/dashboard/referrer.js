@@ -65,6 +65,6 @@ function isInvestorOurReferral(id) {
   return State.isInvestorOurReferral(id);
 }
 
-export {isInvestorOurReferral, getReferrer, get, isReferrerUrlOwn, getReferrerUrl,
+export default {isInvestorOurReferral, getReferrer, get, isReferrerUrlOwn, getReferrerUrl,
   setReferrerUrl, setReferrer, resetReferrer, deleteReferrerUrl,
   hasReferrer, hasReferrerUrl, parse};

@@ -1,7 +1,7 @@
 import UI from './ui';
 import Referrer from './referrer';
 import Session from '../session';
-import Dialogs from './component/dialogs'
+import Dialogs from './components/dialogs'
 import Template from "./components/template";
 import DB from './db';
 
@@ -61,3 +61,5 @@ $(window).on("load", function() {
 function logoutAndPrompt() {
   Session.logout(Dialogs.showLoginUI); // side-wide function of clearing session
 }
+
+export default {logoutAndPrompt};

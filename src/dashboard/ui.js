@@ -41,7 +41,7 @@ function updateTokenStatBalanceUI(selector, newValue) {
 //   tokenShareBarUI.animate(shareModifier || 0);
 // }
 
-var BASE_BAR_CONFIG {
+var BASE_BAR_CONFIG = {
   strokeWidth: BAR_PROPERTIES.strokeWidth,
   trailColor: BAR_PROPERTIES.trailColor,
   trailWidth: 25,
@@ -62,7 +62,7 @@ var BASE_BAR_CONFIG {
   }
 };
 
-export {
+export default {
   initUIComponents,
   update,
   updateEuroInvested,

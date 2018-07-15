@@ -14,4 +14,4 @@ function showError(code, message) {
   $("#dashboard-error-overlay").removeClass("hidden");
 }
 
-export {hideLoginUI, showLoginUI, showError};
+export default {hideLoginUI, showLoginUI, showError};
