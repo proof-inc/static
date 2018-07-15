@@ -63,7 +63,7 @@ var BASE_BAR_CONFIG = {
 };
 
 export default {
-  initUIComponents,
+  initComponents,
   update,
   updateEuroInvested,
   updateReferralStats,
