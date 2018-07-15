@@ -49,7 +49,7 @@ function getReferrerUrl() {
 }
 
 function isReferrerUrlOwn() {
-  return hasReferrerUrl() && (getReferrerUrl() == getUserId());
+  return hasReferrerUrl() && (getReferrerUrl() == Session.getUserId());
 }
 
 function getReferrer() {
