@@ -242,13 +242,13 @@ eval("__webpack_require__.r(__webpack_exports__);\nfunction now() {\n  return (+
 /***/ }),
 
 /***/ 0:
-/*!**********************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
-  !*** multi ./src/util.js ./src/dashboard/referrer.js ./src/dashboard/ui.js ./src/dashboard/components/dialogs.js ./src/dashboard/components/template.js ./src/dashboard/components/balance.js ./src/dashboard/components/calculator.js ./src/dashboard/components/supply.js ./src/dashboard/db.js ./src/dashboard/index.js ./src/reamaze.js ***!
-  \**********************************************************************************************************************************************************************************************************************************************************************************************************************************************/
+/*!*******************************************************!*\
+  !*** multi ./src/dashboard/index.js ./src/reamaze.js ***!
+  \*******************************************************/
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-eval("__webpack_require__(/*! ./src/util.js */\"./src/util.js\");\n__webpack_require__(/*! ./src/dashboard/referrer.js */\"./src/dashboard/referrer.js\");\n__webpack_require__(/*! ./src/dashboard/ui.js */\"./src/dashboard/ui.js\");\n__webpack_require__(/*! ./src/dashboard/components/dialogs.js */\"./src/dashboard/components/dialogs.js\");\n__webpack_require__(/*! ./src/dashboard/components/template.js */\"./src/dashboard/components/template.js\");\n__webpack_require__(/*! ./src/dashboard/components/balance.js */\"./src/dashboard/components/balance.js\");\n__webpack_require__(/*! ./src/dashboard/components/calculator.js */\"./src/dashboard/components/calculator.js\");\n__webpack_require__(/*! ./src/dashboard/components/supply.js */\"./src/dashboard/components/supply.js\");\n__webpack_require__(/*! ./src/dashboard/db.js */\"./src/dashboard/db.js\");\n__webpack_require__(/*! ./src/dashboard/index.js */\"./src/dashboard/index.js\");\nmodule.exports = __webpack_require__(/*! ./src/reamaze.js */\"./src/reamaze.js\");\n\n\n//# sourceURL=webpack:///multi_./src/util.js_./src/dashboard/referrer.js_./src/dashboard/ui.js_./src/dashboard/components/dialogs.js_./src/dashboard/components/template.js_./src/dashboard/components/balance.js_./src/dashboard/components/calculator.js_./src/dashboard/components/supply.js_./src/dashboard/db.js_./src/dashboard/index.js_./src/reamaze.js?");
+eval("__webpack_require__(/*! ./src/dashboard/index.js */\"./src/dashboard/index.js\");\nmodule.exports = __webpack_require__(/*! ./src/reamaze.js */\"./src/reamaze.js\");\n\n\n//# sourceURL=webpack:///multi_./src/dashboard/index.js_./src/reamaze.js?");
 
 /***/ })
 
