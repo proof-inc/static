@@ -6,24 +6,24 @@ import Util from '../util';
 export default {
 
   init: function() {
-    registerInvestorLoggedIn();
-    registerInvestorListener();
-    registerTransactionListener();
+    this.registerInvestorLoggedIn();
+    this.registerInvestorListener();
+    this.registerTransactionListener();
   },
 
   // whenever any investor data changes, reparse
   registerInvestorListener: function() {
-    dbInvestors().on("value", parseInvestors);
+    this.dbInvestors().on("value", parseInvestors);
   },
 
   // reparse all transactions when a new one occurs
   registerTransactionListener: function() {
-    dbTransactions().on("child_added", parseTransaction);
+    this.dbTransactions().on("child_added", parseTransaction);
   },
 
   // manually trigger parsing transactions
   triggerParseTransactions: function() {
-    dbTransactions().once("value", parseTransactions);
+    this.dbTransactions().once("value", parseTransactions);
   },
 
   parseInvestors: function(investorsSnapshot) {
@@ -53,7 +53,7 @@ export default {
     // only catches on later. then the investor list changes,
     // but we need to rescan transactions to count referrals
     if (State.updateReferralInvestorIds(newIds)) {
-      triggerParseTransactions();
+      this.triggerParseTransactions();
     }
   },
 
@@ -77,7 +77,7 @@ export default {
   },
 
   registerInvestorLoggedIn: function() {
-    dbThisInvestor().once('value', function(snapshot) {
+    this.dbThisInvestor().once('value', function(snapshot) {
       var exists = (snapshot.val() !== null);
       if (exists) {
         registerInvestorMeta();
@@ -101,19 +101,19 @@ export default {
 
   initInvestorMeta: function() {
     console.log("initialized entry for investor: ", Session.getUserId());
-    dbThisInvestorUserData().set({
+    this.dbThisInvestorUserData().set({
       referrer: Referrer.get()
     });
-    registerInvestorLastSeenTimestamp();
+    this.registerInvestorLastSeenTimestamp();
   },
 
   registerInvestorMeta: function() {
-    registerInvestorLastSeenTimestamp();
-    registerReferrer();
+    this.registerInvestorLastSeenTimestamp();
+    this.registerReferrer();
   },
 
   registerInvestorLastSeenTimestamp: function() {
-    dbEnv()
+    this.dbEnv()
       .child("logins")
       .push({
         timestamp: Util.now(),
@@ -124,8 +124,8 @@ export default {
   // extra chance of registering the referrer if we already had been authenticated
   // and therefore the registration is not run
   registerReferrer: function() {
-    if (hasReferrer()) {
-      dbThisInvestorReferrer().setValue(Referrer.get());
+    if (Referrer.hasReferrer()) {
+      this.dbThisInvestorReferrer().setValue(Referrer.get());
     }
   },
 
@@ -138,26 +138,26 @@ export default {
   },
 
   dbTransactions: function() {
-    return dbEnv().child('transactions');
+    return this.dbEnv().child('transactions');
   },
 
   dbInvestors: function() {
-    return dbEnv().child('investors');
+    return this.dbEnv().child('investors');
   },
 
   dbThisInvestor: function() {
-    return dbInvestors().child(Session.getUserId());
+    return this.dbInvestors().child(Session.getUserId());
   },
 
   dbThisInvestorUserData: function() {
-    return dbThisInvestor().child("userData");
+    return this.dbThisInvestor().child("userData");
   },
 
   dbThisInvestorReferrer: function() {
-    return dbThisInvestorUserData().child("referrer");
+    return this.dbThisInvestorUserData().child("referrer");
   },
 
   dbThisInvestorDeposits: function() {
-    return dbThisInvestor().child("deposits");
+    return this.dbThisInvestor().child("deposits");
   },
 }

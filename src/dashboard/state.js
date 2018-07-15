@@ -36,15 +36,15 @@ export default {
   },
 
   numTokensSold: function() {
-    return euroToTokenAmount(Math.max(0, TOTAL_EURO_RAISED))
+    return this.euroToTokenAmount(Math.max(0, TOTAL_EURO_RAISED))
   },
 
   numTokenBalance: function() {
-    return euroToTokenAmount(Math.max(0, EURO_INVESTED));
+    return this.euroToTokenAmount(Math.max(0, EURO_INVESTED));
   },
 
   numTokenBonusBalance: function() {
-    return tokenBonusAmount(numTokenBalance());
+    return this.tokenBonusAmount(this.numTokenBalance());
   },
 
   numReferralSignups: function() {
@@ -60,7 +60,7 @@ export default {
   },
 
   totalInvestorTokenAmount: function() {
-    return numTokenBalance() + numTokenBonusBalance();
+    return this.numTokenBalance() + this.numTokenBonusBalance();
   },
 
   setKYCDone: function() {
@@ -81,7 +81,7 @@ export default {
 
   updateReferralInvestorIds: function(newIds) {
     if (!Util.arrayEqual(newIds, getReferralInvestorIds())) {
-      setReferralInvestorIds(newIds);
+      this.setReferralInvestorIds(newIds);
       return true;
     }
     return false;
@@ -92,15 +92,15 @@ export default {
   },
 
   isInvestorOurReferral: function(id) {
-    return getReferralInvestorIds().includes(id);
+    return this.getReferralInvestorIds().includes(id);
   },
 
   tokensSaleAvailable: function() {
-    return BASE_TOKEN_AMOUNT - numTokensSold();
+    return BASE_TOKEN_AMOUNT - this.numTokensSold();
   },
 
   euroSaleAvailable: function() {
-    return tokensSaleAvailable() * EURO_PRICE_PER_TOKEN;
+    return this.tokensSaleAvailable() * EURO_PRICE_PER_TOKEN;
   },
 
   processTx: function(investorId, amount, timestamp, tx) {
@@ -125,28 +125,28 @@ export default {
   },
 
   percentTotalSupply: function(tokenAmount) {
-    return percentageOf(tokenAmount, BASE_TOKEN_AMOUNT);
+    return this.percentageOf(tokenAmount, BASE_TOKEN_AMOUNT);
   },
 
   // what the amoutn of tokens is relative to total supply
   // expressed in fraction from 0-1
   modifierSoldSupply() {
-    return percentTotalSupply(numTokensSold()) / 100;
+    return this.percentTotalSupply(this.numTokensSold()) / 100;
   },
 
   percentSoldSupply: function(tokenAmount) {
-    return percentageOf(tokenAmount, numTokensSold());
+    return this.percentageOf(tokenAmount, this.numTokensSold());
   },
 
   tokenBonusAmount: function(tokenAmount, totalTokensSold) {
-    var tokenAmountModifier = getBonusModifier(totalTokensSold);
+    var tokenAmountModifier = this.getBonusModifier(totalTokensSold);
     var bonusModifier = ((tokenAmountModifier * 1000) - 1000) / 1000; // due to strange rounding error
     return Math.round(tokenAmount * bonusModifier);
   },
 
   getBonusModifier: function(totalTokensSold) {
     var bonusModifier = 1.0;
-    var salePhase = percentTotalSupply(totalTokensSold);
+    var salePhase = this.percentTotalSupply(totalTokensSold);
     if (salePhase < 2){
 
     }
