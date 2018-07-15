@@ -1,3 +1,10 @@
+// import firebase from 'firebase';
+
+import 'firebase/auth';
+import 'firebase/database';
+import 'firebase/functions';
+import * as firebaseui from 'firebaseui';
+
 // Initialize Firebase
 // TODO: pull
 firebase.initializeApp({

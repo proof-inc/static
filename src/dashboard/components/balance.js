@@ -1,5 +1,6 @@
 import State from '../state';
 import UI from '../ui';
+import merge from 'deepmerge';
 
 var tokenShareBarUI = null;
 
@@ -27,7 +28,7 @@ function updateSupplyShareUI() {
 }
 
 function createTokenShareBarUI() {
-  return new ProgressBar.SemiCircle('#progress-share-percentage', deepmerge(UI.BASE_BAR_CONFIG, {
+  return new ProgressBar.SemiCircle('#progress-share-percentage', merge(UI.BASE_BAR_CONFIG, {
     color: '#333',
     text: {
       value: '',

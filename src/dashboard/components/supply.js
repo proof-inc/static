@@ -1,5 +1,6 @@
 import State from '../state';
 import UI from '../ui';
+import merge from 'deepmerge';
 
 var tokenSupplyBarUI = null;
 
@@ -16,7 +17,7 @@ function updateSupplyBarUI() {
 }
 
 function createTokenSupplyBarUI() {
-  return new ProgressBar.Circle('#token-supply-left-progress', deepmerge(UI.BASE_BAR_CONFIG, {
+  return new ProgressBar.Circle('#token-supply-left-progress', merge(UI.BASE_BAR_CONFIG, {
     color: '#F8BC3F',
     strokeWidth: 10,
     trailWidth: 10,
