@@ -188,6 +188,6 @@ function redirectToDashboardOnLogout() {
 
 export default {
   onLogin, onLogout, login, logout, redirectToDashboardOnLogout,
-  db, isAuthenticated,
+  db, dbEnv, isAuthenticated,
   getUserId, getUserIdHash, getEmail, getName, getAvatar
 };
