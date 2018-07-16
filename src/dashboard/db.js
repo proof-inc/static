@@ -13,17 +13,17 @@ export default {
 
   // whenever any investor data changes, reparse
   registerInvestorListener: function() {
-    this.dbInvestors().on("value", parseInvestors);
+    this.dbInvestors().on("value", this.parseInvestors);
   },
 
   // reparse all transactions when a new one occurs
   registerTransactionListener: function() {
-    this.dbTransactions().on("child_added", parseTransaction);
+    this.dbTransactions().on("child_added", this.parseTransaction);
   },
 
   // manually trigger parsing transactions
   triggerParseTransactions: function() {
-    this.dbTransactions().once("value", parseTransactions);
+    this.dbTransactions().once("value", this.parseTransactions);
   },
 
   parseInvestors: function(investorsSnapshot) {
@@ -80,10 +80,10 @@ export default {
     this.dbThisInvestor().once('value', function(snapshot) {
       var exists = (snapshot.val() !== null);
       if (exists) {
-        registerInvestorMeta();
+        this.registerInvestorMeta();
       }
       else {
-        initInvestorMeta();
+        this.initInvestorMeta();
       }
     });
 
