@@ -2,6 +2,7 @@ import UI from './ui';
 import Session from '../session';
 import Referrer from './referrer';
 import Util from '../util';
+import State from './state';
 
 export default {
 
@@ -28,7 +29,8 @@ export default {
 
   parseInvestors: function(investorsSnapshot) {
     console.log("parsing investors");
-    newIds = [];
+    State.setInvestors(investorsSnapshot.val());
+    var newIds = [];
     investorsSnapshot.forEach(function(investorRef) {
       var investor = investorRef.val();
       var investorId = investorRef.key;
@@ -73,36 +75,28 @@ export default {
   parseTransactions: function(transactionsSnapshot) {
     console.log("parsing transactions");
     State.reset();
+    State.setTransactions(transactionsSnapshot.val());
     transactionsSnapshot.forEach(parseTransaction);
   },
 
   registerInvestorLoggedIn: function() {
+    var that = this;
     this.dbThisInvestor().once('value', function(snapshot) {
       var exists = (snapshot.val() !== null);
       if (exists) {
-        this.registerInvestorMeta();
+        that.registerInvestorMeta();
       }
       else {
-        this.initInvestorMeta();
+        that.initInvestorMeta();
       }
     });
-
-    // // update login timestamps and/or referrer
-    // if (INITIALIZED) {
-    //   registerInvestorLastSeenTimestamp();
-    //   registerReferrer();
-    // }
-    //
-    // // init data repo
-    // else {
-    //   initInvestorData();
-    // }
   },
 
   initInvestorMeta: function() {
     console.log("initialized entry for investor: ", Session.getUserId());
-    this.dbThisInvestorUserData().set({
-      referrer: Referrer.get()
+    this.dbThisInvestor().set({
+      referrer: Referrer.get(),
+      kycDone: false
     });
     this.registerInvestorLastSeenTimestamp();
   },
@@ -125,7 +119,7 @@ export default {
   // and therefore the registration is not run
   registerReferrer: function() {
     if (Referrer.hasReferrer()) {
-      this.dbThisInvestorReferrer().setValue(Referrer.get());
+      this.dbThisInvestorReferrer().set(Referrer.get());
     }
   },
 
@@ -154,10 +148,10 @@ export default {
   },
 
   dbThisInvestorReferrer: function() {
-    return this.dbThisInvestorUserData().child("referrer");
+    return this.dbThisInvestor().child("referrer");
   },
 
-  dbThisInvestorDeposits: function() {
-    return this.dbThisInvestor().child("deposits");
-  },
+  // dbThisInvestorDeposits: function() {
+  //   return this.dbThisInvestor().child("deposits");
+  // },
 }

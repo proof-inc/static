@@ -1,16 +1,17 @@
 import Dashboard from '../index';
 import Session from '../../session';
 import State from '../state';
+import Referrals from './referrals';
 
-function bindReferralButtonUrl() {
-  $("#referral-button").attr("href", "/privatesale/" + Session.getUserId());
+function bindTemplateData() {
+  registerLogoutListener();
+  bindWelcomeName();
+  bindKYCFormEmail();
+  Referrals.init();
 }
 
-function bindReferralLink() {
-  var url = AUTH0_CALLBACK_URL + '/' + Session.getUserId();
-  $(".referral-link")
-    .text(url)
-    .attr("href", url);
+function updateReferrals() {
+  Referrals.update();
 }
 
 function registerLogoutListener() {
@@ -30,18 +31,4 @@ function bindKYCFormEmail() {
   );
 }
 
-function bindReferralStats() {
-  $("#dashboard-ref-count").text(State.numReferralSignups());
-  $("#dashboard-ref-commission").text(State.numReferralCommissionAmount());
-}
-
-function bindTemplateData() {
-  registerLogoutListener();
-  bindWelcomeName();
-  bindReferralButtonUrl();
-  bindReferralLink();
-  bindReferralStats();
-  bindKYCFormEmail();
-}
-
-export default {bindTemplateData};
+export default {bindTemplateData, updateReferrals};

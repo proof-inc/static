@@ -22,7 +22,19 @@ var REFERRAL_TRANSACTIONS = [];
 // timestamp of last investment done
 var LAST_INVESTMENT_TIMESTAMP = null;
 
+// cache of total objects
+var _transactions = null;
+var _investors = null;
+
 export default {
+
+  setTransactions: function(tx) {
+    _transactions = tx;
+  },
+
+  setInvestors: function(investors) {
+    _investors = investors;
+  }
 
   reset: function() {
     TOTAL_EURO_RAISED = 0;
@@ -49,6 +61,18 @@ export default {
 
   numReferralSignups: function() {
     return REFERRAL_INVESTOR_IDS.length;
+  },
+
+  numReferralTransactions: function() {
+    return REFERRAL_TRANSACTIONS.length;
+  },
+
+  hasReferralSignups: function() {
+    return this.numReferralSignups() > 0;
+  },
+
+  hasReferralTransactions: function() {
+    return this.numReferralTransactions() > 0;
   },
 
   numReferralCommissionAmount: function() {
@@ -80,7 +104,7 @@ export default {
   },
 
   updateReferralInvestorIds: function(newIds) {
-    if (!Util.arrayEqual(newIds, getReferralInvestorIds())) {
+    if (!Util.arrayEqual(newIds, this.getReferralInvestorIds())) {
       this.setReferralInvestorIds(newIds);
       return true;
     }

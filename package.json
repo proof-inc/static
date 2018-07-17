@@ -5,7 +5,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack --mode development",
-    "commit": "npm run build && git add . && git commit -a && git push"
+    "commit": "npm run build && git add . && git commit -a && git push",
+    "server": "webpack-serve ./webpack.config.js --open-path privatesale",
+    "clean": ""
   },
   "repository": {
     "type": "git",
@@ -28,6 +30,7 @@
     "jquery.animate-number": "0.0.14",
     "progressbar.js": "^1.0.1",
     "webpack-cli": "^3.0.8",
-    "webpack-merge-and-include-globally": "^2.0.11"
+    "webpack-merge-and-include-globally": "^2.0.11",
+    "webpack-serve": "^2.0.2"
   }
 }

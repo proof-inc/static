@@ -12,13 +12,12 @@ import DB from './db';
 // TODO
 // - KYC welcome name var
 // - psp callbacks
-// - investor parser rework
 // - referral stats
 // - kyc callback
 // - token number formatting
 // - anonymous chat?
 // - anonymous recent transaction list
-// - auth domain (https://stackoverflow.com/questions/44815580/how-to-replace-the-myapp-123-firebaseapp-com-with-my-custom-domain-myapp-com)
+// - push notifications
 
 //
 // CREATE UI
@@ -45,7 +44,7 @@ $(window).on("load", function() {
     DB.init();
 
     // reset meters
-    UI.updateEuroInvested();
+    UI.update();
 
     // hide loading screen
     Dialogs.hideLoginUI();

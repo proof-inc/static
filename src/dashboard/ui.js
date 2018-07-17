@@ -15,6 +15,7 @@ const BAR_PROPERTIES = {
 // TODO: max aanpassen wanneer nieuwe investeringen gedaan worden
 function initComponents() {
   Balance.init();
+  Supply.init();
   Calculator.init();
 }
 
@@ -29,7 +30,7 @@ function updateEuroInvested() {
 }
 
 function updateReferralStats() {
-  Template.bindReferralStats();
+  Template.updateReferrals();
 }
 
 function updateTokenStatBalanceUI(selector, newValue) {

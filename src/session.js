@@ -60,7 +60,7 @@ function login(htmlLoginContainer, loginUrl) {
 function setSession(userObj) {
   setFirebaseSession(userObj);
   IS_AUTHENTICATED = true;
-  console.info("user logged in: " + userObj);
+  console.info("user logged in: ", getUserId());
   if (LOGIN_CALLBACK) {
     LOGIN_CALLBACK();
   }
@@ -188,6 +188,6 @@ function redirectToDashboardOnLogout() {
 
 export default {
   onLogin, onLogout, login, logout, redirectToDashboardOnLogout,
-  db, dbEnv, isAuthenticated,
+  db, dbEnv, isAuthenticated, isCurrentUser,
   getUserId, getUserIdHash, getEmail, getName, getAvatar
 };

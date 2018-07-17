@@ -10,6 +10,7 @@ function parse() {
       deleteReferrerUrl();
     }
   }
+  console.log("referrer after parsing: ", get());
 }
 
 function hasReferrerUrl() {

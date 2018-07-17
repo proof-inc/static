@@ -2,6 +2,7 @@ import State from '../state';
 import UI from '../ui';
 import merge from 'deepmerge';
 import ProgressBar from 'progressbar.js';
+import 'jquery.animate-number';
 
 var tokenShareBarUI = null;
 
@@ -16,11 +17,11 @@ function update() {
 }
 
 function updateTokenBalanceUI() {
-  updateTokenStatBalanceUI('#balance-total', State.numTokenBalance());
+  UI.updateTokenStatBalanceUI('#balance-total', State.numTokenBalance());
 }
 
 function updateTokenBonusBalanceUI() {
-  updateTokenStatBalanceUI('#bonus-total', State.numTokenBonusBalance());
+  UI.updateTokenStatBalanceUI('#bonus-total', State.numTokenBonusBalance());
 }
 
 function updateSupplyShareUI() {
