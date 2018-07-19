@@ -43,8 +43,8 @@ function registerTransactionReferral(investorId, registrationTimestamp, totalAmo
 
 // dynamic
 function bindReferralStats() {
-  $("#dashboard-ref-count").text(State.numReferralSignups());
-  $("#dashboard-ref-commission").text(State.numReferralCommissionAmount());
+  $("#dashboard-ref-count").animate(State.numReferralSignups());
+  $("#dashboard-ref-commission").animate(State.numReferralCommissionAmount());
 }
 
 export default {init, update};

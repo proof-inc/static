@@ -1,11 +1,9 @@
 import Util from '../util';
+import Session from '../session';
+import UI from "./ui";
+import DB from './db';
+
 import {BASE_TOKEN_AMOUNT, EURO_PRICE_PER_TOKEN, REFERRAL_PERCENT_FEE} from './constants';
-
-// the total sum of contributions
-var TOTAL_EURO_RAISED = 0;
-
-// the amont this user account invested
-var EURO_INVESTED = 0;
 
 // whether a registration was done for this user account
 var INITIALIZED = false;
@@ -15,6 +13,9 @@ var KYC_FILLED = false;
 
 // the investor ids of people referred by this account
 var REFERRAL_INVESTOR_IDS = [];
+
+// hash of investor ids to balances
+var INVESTOR_BALANCES = {};
 
 // transactions done by people referred by this account
 var REFERRAL_TRANSACTIONS = [];
@@ -28,31 +29,129 @@ var _investors = null;
 
 export default {
 
+  reset: function() {
+    REFERRAL_INVESTOR_IDS = [];
+    REFERRAL_TRANSACTIONS = [];
+    INVESTOR_BALANCES = {};
+  },
+
   setTransactions: function(tx) {
-    _transactions = tx;
+    this._transactions = tx;
+    this.parseTransactions();
   },
 
   setInvestors: function(investors) {
-    _investors = investors;
-  }
+    this._investors = investors;
+    this.parseInvestors();
+  },
 
-  reset: function() {
-    TOTAL_EURO_RAISED = 0;
-    EURO_INVESTED = 0;
-    REFERRAL_INVESTOR_IDS = [];
-    REFERRAL_TRANSACTIONS = [];
+  parseInvestors: function() {
+    console.log("parsing investors");
+    var refIds = [], that = this;
+    $.each(this._investors, function(investorId, investor) {
+      if (that.parseInvestor(investorId, investor)) { // if this investor is a referral
+        refIds.push(investorId);
+      }
+    });
+
+    // suppose an investor had been registered but the referral id
+    // only catches on later. then the investor list changes,
+    // but we need to rescan transactions to count referrals
+    if (this.updateReferralInvestorIds(refIds)) {
+      // DB.refreshTransactions();
+      this.parseTransactions();
+    }
+
+    UI.update();
+  },
+
+  parseInvestor: function(id, data) {
+    if (Session.isCurrentUser(id)) {
+      if (data.kycDone) {
+        this.setKYCDone();
+      }
+      this.setInvestorInitialized();
+    }
+    return Session.isCurrentUser(data.referrer);
+  },
+
+  // parse transactiosn given a snapshot
+  parseTransaction: function(tx) {
+    console.log("parsing transaction ", tx);
+    var timestamp = parseInt(tx.timestamp);
+    var euroAmount = parseInt(tx.euroAmount);
+    var userId = tx.investorId;
+    var paymentMethod = tx.method;
+    this.processTx(userId, euroAmount, timestamp, tx);
+  },
+
+  parseSingleTransaction: function(tx) {
+    this.parseTransaction(tx);
+    UI.update();
+  },
+
+  // parse transactiosn given a snapshot
+  parseTransactions: function() {
+    console.log("parsing transactions");
+    this.reset();
+    var that = this;
+    $.each(this._transactions, function(key, tx){
+      that.parseTransaction(tx);
+    });
+    UI.update();
+  },
+
+  processTx: function(investorId, amount, timestamp, tx) {
+
+    this.adjustInvestorBalanceEntry(investorId, amount);
+
+    // transaction for someone else. however,
+    // if we did refer them we get 2%
+    if (this.isInvestorOurReferral(investorId)) {
+      REFERRAL_TRANSACTIONS.push(tx);
+      console.log("found referral transaction: ", tx)
+    }
+
+    // mark time of last investment
+    if (LAST_INVESTMENT_TIMESTAMP == null || timestamp > LAST_INVESTMENT_TIMESTAMP) {
+      LAST_INVESTMENT_TIMESTAMP = timestamp;
+    }
+  },
+
+  initInvestorBalanceEntry: function(investorId) {
+    if (!INVESTOR_BALANCES[investorId]) {
+      INVESTOR_BALANCES[investorId] = 0;
+    }
+  },
+
+  adjustInvestorBalanceEntry: function(investorId, mutation) {
+    this.initInvestorBalanceEntry(investorId);
+    INVESTOR_BALANCES[investorId] += mutation;
+    return this.getInvestorBalance(investorId);
   },
 
   numBaseTokenAmount: function() {
     return BASE_TOKEN_AMOUNT;
   },
 
+  numTotalEuroRaised: function() {
+    var t = 0, that = this;
+    $.each(INVESTOR_BALANCES, function(investorId, balance) {
+      t += that.getInvestorBalance(investorId);
+    });
+    return t;
+  },
+
+  numInvestorEuroRaised: function() {
+    return this.getInvestorBalance(Session.getUserId());
+  },
+
   numTokensSold: function() {
-    return this.euroToTokenAmount(Math.max(0, TOTAL_EURO_RAISED))
+    return this.euroToTokenAmount(Math.max(0, this.numTotalEuroRaised()))
   },
 
   numTokenBalance: function() {
-    return this.euroToTokenAmount(Math.max(0, EURO_INVESTED));
+    return this.euroToTokenAmount(Math.max(0, this.numInvestorEuroRaised()));
   },
 
   numTokenBonusBalance: function() {
@@ -76,9 +175,9 @@ export default {
   },
 
   numReferralCommissionAmount: function() {
-    var commission = 0;
+    var commission = 0, that = this;
     REFERRAL_TRANSACTIONS.forEach(function(tx) {
-      commission += (tx.euroAmount * referralFeeModifier).toFixed(2);
+      commission += (tx.euroAmount * that.referralFeeModifier()).toFixed(2);
     });
     return commission;
   },
@@ -93,6 +192,11 @@ export default {
 
   setInvestorInitialized: function() {
     INITIALIZED = true;
+  },
+
+  getInvestorBalance: function(investorId) {
+    this.initInvestorBalanceEntry(investorId);
+    return INVESTOR_BALANCES[investorId];
   },
 
   getReferralInvestorIds: function() {
@@ -125,27 +229,6 @@ export default {
 
   euroSaleAvailable: function() {
     return this.tokensSaleAvailable() * EURO_PRICE_PER_TOKEN;
-  },
-
-  processTx: function(investorId, amount, timestamp, tx) {
-    // TODO: make sure it doesnt go below 0
-    TOTAL_EURO_RAISED += amount;
-
-    // one of our transactions
-    if (Session.isCurrentUser(investorId)) {
-      EURO_INVESTED += amount;
-    }
-
-    // transaction for someone else. however,
-    // if we did refer them we get 2%
-    else if (State.isInvestorOurReferral(investorId)) {
-      REFERRAL_TRANSACTIONS.push(tx);
-    }
-
-    // mark time of last investment
-    if (LAST_INVESTMENT_TIMESTAMP == null || timestamp > LAST_INVESTMENT_TIMESTAMP) {
-      LAST_INVESTMENT_TIMESTAMP = timestamp;
-    }
   },
 
   percentTotalSupply: function(tokenAmount) {

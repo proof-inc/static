@@ -14,69 +14,23 @@ export default {
 
   // whenever any investor data changes, reparse
   registerInvestorListener: function() {
-    this.dbInvestors().on("value", this.parseInvestors);
+    this.dbInvestors().on("value", function(investorsSnapshot) {
+      State.setInvestors(investorsSnapshot.val());
+    });
   },
 
   // reparse all transactions when a new one occurs
   registerTransactionListener: function() {
-    this.dbTransactions().on("child_added", this.parseTransaction);
+    this.dbTransactions().on("child_added", function(txSnapshot) {
+      State.parseSingleTransaction(txSnapshot.val());
+    });
   },
 
   // manually trigger parsing transactions
-  triggerParseTransactions: function() {
-    this.dbTransactions().once("value", this.parseTransactions);
-  },
-
-  parseInvestors: function(investorsSnapshot) {
-    console.log("parsing investors");
-    State.setInvestors(investorsSnapshot.val());
-    var newIds = [];
-    investorsSnapshot.forEach(function(investorRef) {
-      var investor = investorRef.val();
-      var investorId = investorRef.key;
-
-      // our data
-      if (Session.isCurrentUser(investorId)) {
-        if (investor.kycDone) {
-          State.setKYCDone();
-        }
-        State.setInvestorInitialized();
-      }
-
-      // other investor
-      else {
-        if (Session.isCurrentUser(investor.referrer)) {
-          newIds.push(investorId);
-        }
-      }
+  refreshTransactions: function() {
+    this.dbTransactions().once("value", function(txsSnapshot) {
+      State.setTransactions(txsSnapshot.val());
     });
-
-    // suppose an investor had been registered but the referral id
-    // only catches on later. then the investor list changes,
-    // but we need to rescan transactions to count referrals
-    if (State.updateReferralInvestorIds(newIds)) {
-      this.triggerParseTransactions();
-    }
-  },
-
-  // parse transactiosn given a snapshot
-  parseTransaction: function(transactionSnapshot) {
-    console.log("parsing transaction ", transactionSnapshot.toJSON());
-    var tx = transactionSnapshot.val();
-    var timestamp = parseInt(tx.timestamp);
-    var euroAmount = parseInt(tx.euroAmount);
-    var userId = tx.investorId;
-    var paymentMethod = tx.method;
-    State.processTx(userId, euroAmount, timestamp, tx);
-    UI.update();
-  },
-
-  // parse transactiosn given a snapshot
-  parseTransactions: function(transactionsSnapshot) {
-    console.log("parsing transactions");
-    State.reset();
-    State.setTransactions(transactionsSnapshot.val());
-    transactionsSnapshot.forEach(parseTransaction);
   },
 
   registerInvestorLoggedIn: function() {
