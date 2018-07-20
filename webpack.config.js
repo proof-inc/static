@@ -11,7 +11,7 @@ module.exports = {
 
   mode: "development",
 
-  watch: true,
+  // watch: true,
 
   // collections of files that should be concatenated to produce a single
   // entry file as end result

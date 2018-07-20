@@ -34,13 +34,10 @@ function updateReferralStats() {
 }
 
 function updateTokenStatBalanceUI(selector, newValue) {
-  $(selector).animateNumber({ number: newValue });
+  if ($(selector).text() != (""+newValue)) {
+    $(selector).animateNumber({ number: newValue });
+  }
 }
-
-// function updateTokenBarUI(barUI, num, ) {
-//   var shareModifier = percentSoldSupply(numTokenBalance()) / 100;
-//   tokenShareBarUI.animate(shareModifier || 0);
-// }
 
 var BASE_BAR_CONFIG = {
   strokeWidth: BAR_PROPERTIES.strokeWidth,

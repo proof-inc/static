@@ -4,7 +4,8 @@
   "description": "",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "webpack --mode development",
+    "build": "webpack --mode none",
+    "build-watch": "webpack --mode development --watch",
     "commit": "npm run build && git add . && git commit -a && git push",
     "server": "webpack-serve ./webpack.config.js --open-path privatesale",
     "clean": ""
@@ -20,6 +21,7 @@
   },
   "homepage": "https://github.com/proof-inc/static#readme",
   "dependencies": {
+    "moment": "^2.22.2",
     "webpack": "^4.16.0"
   },
   "devDependencies": {

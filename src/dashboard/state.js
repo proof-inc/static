@@ -30,9 +30,17 @@ var _investors = null;
 export default {
 
   reset: function() {
+    this.resetInvestors();
+    this.resetTransactions();
+  },
+
+  resetInvestors: function() {
     REFERRAL_INVESTOR_IDS = [];
-    REFERRAL_TRANSACTIONS = [];
+  },
+
+  resetTransactions: function() {
     INVESTOR_BALANCES = {};
+    REFERRAL_TRANSACTIONS = [];
   },
 
   setTransactions: function(tx) {
@@ -47,9 +55,11 @@ export default {
 
   parseInvestors: function() {
     console.log("parsing investors");
+    this.resetInvestors();
     var refIds = [], that = this;
     $.each(this._investors, function(investorId, investor) {
       if (that.parseInvestor(investorId, investor)) { // if this investor is a referral
+        console.log("referral investor found: ", investorId);
         refIds.push(investorId);
       }
     });
@@ -58,6 +68,7 @@ export default {
     // only catches on later. then the investor list changes,
     // but we need to rescan transactions to count referrals
     if (this.updateReferralInvestorIds(refIds)) {
+      console.log("rescanning transactions after discovering new referral investors");
       // DB.refreshTransactions();
       this.parseTransactions();
     }
@@ -80,9 +91,22 @@ export default {
     console.log("parsing transaction ", tx);
     var timestamp = parseInt(tx.timestamp);
     var euroAmount = parseInt(tx.euroAmount);
-    var userId = tx.investorId;
+    var investorId = tx.investorId;
     var paymentMethod = tx.method;
-    this.processTx(userId, euroAmount, timestamp, tx);
+
+    this.adjustInvestorBalanceEntry(investorId, euroAmount);
+
+    // transaction for someone else. however,
+    // if we did refer them we get 2%
+    if (this.isInvestorOurReferral(investorId)) {
+      this.getReferralTransactions().push(tx);
+      console.log("found referral transaction")
+    }
+
+    // mark time of last investment
+    if (LAST_INVESTMENT_TIMESTAMP == null || timestamp > LAST_INVESTMENT_TIMESTAMP) {
+      LAST_INVESTMENT_TIMESTAMP = timestamp;
+    }
   },
 
   parseSingleTransaction: function(tx) {
@@ -93,29 +117,12 @@ export default {
   // parse transactiosn given a snapshot
   parseTransactions: function() {
     console.log("parsing transactions");
-    this.reset();
+    this.resetTransactions();
     var that = this;
     $.each(this._transactions, function(key, tx){
       that.parseTransaction(tx);
     });
     UI.update();
-  },
-
-  processTx: function(investorId, amount, timestamp, tx) {
-
-    this.adjustInvestorBalanceEntry(investorId, amount);
-
-    // transaction for someone else. however,
-    // if we did refer them we get 2%
-    if (this.isInvestorOurReferral(investorId)) {
-      REFERRAL_TRANSACTIONS.push(tx);
-      console.log("found referral transaction: ", tx)
-    }
-
-    // mark time of last investment
-    if (LAST_INVESTMENT_TIMESTAMP == null || timestamp > LAST_INVESTMENT_TIMESTAMP) {
-      LAST_INVESTMENT_TIMESTAMP = timestamp;
-    }
   },
 
   initInvestorBalanceEntry: function(investorId) {
@@ -163,7 +170,7 @@ export default {
   },
 
   numReferralTransactions: function() {
-    return REFERRAL_TRANSACTIONS.length;
+    return this.getReferralTransactions().length;
   },
 
   hasReferralSignups: function() {
@@ -176,8 +183,8 @@ export default {
 
   numReferralCommissionAmount: function() {
     var commission = 0, that = this;
-    REFERRAL_TRANSACTIONS.forEach(function(tx) {
-      commission += (tx.euroAmount * that.referralFeeModifier()).toFixed(2);
+    this.getReferralTransactions().forEach(function(tx) {
+      commission += parseInt(that.getEuroReferralCommission(tx.euroAmount));
     });
     return commission;
   },
@@ -194,6 +201,14 @@ export default {
     INITIALIZED = true;
   },
 
+  getEuroReferralCommission: function(euroAmount) {
+    return (parseInt(euroAmount) * this.referralFeeModifier()).toFixed(2);
+  },
+
+  getReferralTransactions: function() {
+    return REFERRAL_TRANSACTIONS;
+  },
+
   getInvestorBalance: function(investorId) {
     this.initInvestorBalanceEntry(investorId);
     return INVESTOR_BALANCES[investorId];
@@ -201,6 +216,15 @@ export default {
 
   getReferralInvestorIds: function() {
     return REFERRAL_INVESTOR_IDS;
+  },
+
+  getReferralInvestorBalances: function() {
+    return this.getReferralInvestorIds().map(function(investorId){
+      return jQuery.extend(true, {
+        id: investorId,
+        euroAmount: this.getInvestorBalance(investorId)
+      }, (_investors || {})[investorId]);
+    }, this);
   },
 
   setReferralInvestorIds: function(newIds) {

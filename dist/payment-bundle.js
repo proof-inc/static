@@ -81,19 +81,62 @@
 /******/
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = "./src/payment-provider.js");
+/******/ 	return __webpack_require__(__webpack_require__.s = 174);
 /******/ })
 /************************************************************************/
 /******/ ({
 
-/***/ "./src/payment-provider.js":
-/*!*********************************!*\
-  !*** ./src/payment-provider.js ***!
-  \*********************************/
-/*! no static exports found */
+/***/ 174:
 /***/ (function(module, exports) {
 
-eval("// register on load\n$(function()\n{\n  // we need to provide the user id to the payment method\n\tredirectToDashboardOnLogout();\n\n  var paypalIdealForm = $(\".paypal-ideal-form\");\n\n  // form that is active on both paypal and ideal page\n  if (hasPaypalIdealForm()) {\n    getPaypalIdealComponent(\".hidden-user-id\").val(getUserId());\n    getPaypalIdealComponent(\".paypal-ideal-submit\").click(function(){\n      var amount = getPaypalIdealComponent(\".paypal-ideal-amount\").val();\n      var url = generatePaypalBunqReceiveUrl(getPaypalIdealType(), amount)\n      window.open(url);\n    });\n  }\n\n  // SEPA & SWIFT\n  $(\"#personal-reference-code\").text(getUserId());\n\n  // determine if this is a paypal or ideal page\n  function getPaypalIdealType() {\n    if (location.pathname.match('dashboard/payment-instructions/paypal')) {\n      return \"paypal\";\n    }\n    else if (location.pathname.match('dashboard/payment-instructions/ideal')) {\n      return \"ideal\";\n    }\n    else {\n      throw \"unsupported payment page!\";\n    }\n  }\n\n  // generate page for bunq or paypal\n  function generatePaypalBunqReceiveUrl(type, amount) {\n    'https://www.' + type + '.me/proofinc/' + amount;\n  }\n\n  function getPaypalIdealComponent(selector) {\n    return paypalIdealForm.find(selector);\n  }\n\n  function hasPaypalIdealForm() {\n    return paypalIdealForm.length > 0;\n  }\n});\n\n\n//# sourceURL=webpack:///./src/payment-provider.js?");
+// register on load
+$(function()
+{
+  // we need to provide the user id to the payment method
+	redirectToDashboardOnLogout();
+
+  var paypalIdealForm = $(".paypal-ideal-form");
+
+  // form that is active on both paypal and ideal page
+  if (hasPaypalIdealForm()) {
+    getPaypalIdealComponent(".hidden-user-id").val(getUserId());
+    getPaypalIdealComponent(".paypal-ideal-submit").click(function(){
+      var amount = getPaypalIdealComponent(".paypal-ideal-amount").val();
+      var url = generatePaypalBunqReceiveUrl(getPaypalIdealType(), amount)
+      window.open(url);
+    });
+  }
+
+  // SEPA & SWIFT
+  $("#personal-reference-code").text(getUserId());
+
+  // determine if this is a paypal or ideal page
+  function getPaypalIdealType() {
+    if (location.pathname.match('dashboard/payment-instructions/paypal')) {
+      return "paypal";
+    }
+    else if (location.pathname.match('dashboard/payment-instructions/ideal')) {
+      return "ideal";
+    }
+    else {
+      throw "unsupported payment page!";
+    }
+  }
+
+  // generate page for bunq or paypal
+  function generatePaypalBunqReceiveUrl(type, amount) {
+    'https://www.' + type + '.me/proofinc/' + amount;
+  }
+
+  function getPaypalIdealComponent(selector) {
+    return paypalIdealForm.find(selector);
+  }
+
+  function hasPaypalIdealForm() {
+    return paypalIdealForm.length > 0;
+  }
+});
+
 
 /***/ })
 

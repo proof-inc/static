@@ -50,7 +50,8 @@ export default {
     console.log("initialized entry for investor: ", Session.getUserId());
     this.dbThisInvestor().set({
       referrer: Referrer.get(),
-      kycDone: false
+      kycDone: false,
+      registrationTimestamp: Util.now()
     });
     this.registerInvestorLastSeenTimestamp();
   },
