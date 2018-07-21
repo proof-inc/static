@@ -383,11 +383,20 @@ const INVESTORS_STORE_KEY = "_investors";
 
   resetInvestors: function() {
     REFERRAL_INVESTOR_IDS = [];
+    INVESTOR_BALANCES = {};
+    // this._storeObject(INVESTORS_STORE_KEY, {});
   },
 
   resetTransactions: function() {
     INVESTOR_BALANCES = {};
     REFERRAL_TRANSACTIONS = [];
+    // this._storeObject(TRANSACTIONS_STORE_KEY, {});
+  },
+
+  _clearStorage: function() {
+    [TRANSACTIONS_STORE_KEY, INVESTORS_STORE_KEY].forEach(function(key) {
+      localStorage.setItem(key, {});
+    });
   },
 
   _storeObject: function(key, value, _default) {
@@ -407,7 +416,7 @@ const INVESTORS_STORE_KEY = "_investors";
     var oldTx = this.getTransactions();
     var newTx = {}; newTx[txId] = tx;
     this._storeObject(TRANSACTIONS_STORE_KEY, Object(deepmerge__WEBPACK_IMPORTED_MODULE_4__["default"])(oldTx, newTx), {});
-    this.parseTransaction(tx);
+    this.parseSingleTransaction(tx);
   },
 
   getTransactions: function() {
@@ -416,6 +425,7 @@ const INVESTORS_STORE_KEY = "_investors";
 
   setInvestors: function(investors) {
     this._storeObject(INVESTORS_STORE_KEY, investors, {});
+    this.resetInvestors();
     this.parseInvestors();
   },
 
@@ -429,7 +439,6 @@ const INVESTORS_STORE_KEY = "_investors";
 
   parseInvestors: function() {
     console.log("parsing investors");
-    this.resetInvestors();
     var refIds = [], that = this;
     $.each(this.getInvestors(), function(investorId, investor) {
       if (that.parseInvestor(investorId, investor)) { // if this investor is a referral
@@ -43775,6 +43784,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _state__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4);
 /* harmony import */ var _db__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(29);
 /* harmony import */ var _session__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(6);
+/* harmony import */ var _ui__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(2);
+
 
 
 
@@ -43834,16 +43845,28 @@ window._troovebird = {
   _clearInvestors: function() {
     console.log("clearing investors");
     _db__WEBPACK_IMPORTED_MODULE_1__["default"].dbInvestors().remove();
+    _ui__WEBPACK_IMPORTED_MODULE_3__["default"].update();
   },
 
   _clearTx: function() {
     console.log("clearing transactions");
     _db__WEBPACK_IMPORTED_MODULE_1__["default"].dbTransactions().remove();
+    _state__WEBPACK_IMPORTED_MODULE_0__["default"].resetTransactions();
+    _ui__WEBPACK_IMPORTED_MODULE_3__["default"].update();
   },
 
   _clearAll: function() {
     this._clearTx();
     this._clearInvestors();
+    _state__WEBPACK_IMPORTED_MODULE_0__["default"]._clearStorage();
+  },
+
+  //
+  // UI
+  //
+
+  _refresh: function() {
+    _ui__WEBPACK_IMPORTED_MODULE_3__["default"].update();
   }
 };
 

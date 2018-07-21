@@ -1,6 +1,7 @@
 import State from "./state";
 import DB from "./db";
 import Session from "../session";
+import UI from "./ui";
 
 const DEBUG_PREFIX = "debug_";
 
@@ -57,15 +58,27 @@ window._troovebird = {
   _clearInvestors: function() {
     console.log("clearing investors");
     DB.dbInvestors().remove();
+    UI.update();
   },
 
   _clearTx: function() {
     console.log("clearing transactions");
     DB.dbTransactions().remove();
+    State.resetTransactions();
+    UI.update();
   },
 
   _clearAll: function() {
     this._clearTx();
     this._clearInvestors();
+    State._clearStorage();
+  },
+
+  //
+  // UI
+  //
+
+  _refresh: function() {
+    UI.update();
   }
 };

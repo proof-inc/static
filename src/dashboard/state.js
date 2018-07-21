@@ -36,11 +36,20 @@ export default {
 
   resetInvestors: function() {
     REFERRAL_INVESTOR_IDS = [];
+    INVESTOR_BALANCES = {};
+    // this._storeObject(INVESTORS_STORE_KEY, {});
   },
 
   resetTransactions: function() {
     INVESTOR_BALANCES = {};
     REFERRAL_TRANSACTIONS = [];
+    // this._storeObject(TRANSACTIONS_STORE_KEY, {});
+  },
+
+  _clearStorage: function() {
+    [TRANSACTIONS_STORE_KEY, INVESTORS_STORE_KEY].forEach(function(key) {
+      localStorage.setItem(key, {});
+    });
   },
 
   _storeObject: function(key, value, _default) {
@@ -60,7 +69,7 @@ export default {
     var oldTx = this.getTransactions();
     var newTx = {}; newTx[txId] = tx;
     this._storeObject(TRANSACTIONS_STORE_KEY, merge(oldTx, newTx), {});
-    this.parseTransaction(tx);
+    this.parseSingleTransaction(tx);
   },
 
   getTransactions: function() {
@@ -69,6 +78,7 @@ export default {
 
   setInvestors: function(investors) {
     this._storeObject(INVESTORS_STORE_KEY, investors, {});
+    this.resetInvestors();
     this.parseInvestors();
   },
 
@@ -82,7 +92,6 @@ export default {
 
   parseInvestors: function() {
     console.log("parsing investors");
-    this.resetInvestors();
     var refIds = [], that = this;
     $.each(this.getInvestors(), function(investorId, investor) {
       if (that.parseInvestor(investorId, investor)) { // if this investor is a referral
