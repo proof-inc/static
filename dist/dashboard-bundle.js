@@ -89,7 +89,7 @@
 /***/ (function(module, exports, __webpack_require__) {
 
 __webpack_require__(1);
-module.exports = __webpack_require__(173);
+module.exports = __webpack_require__(174);
 
 
 /***/ }),
@@ -102,8 +102,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _referrer__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(30);
 /* harmony import */ var _session__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(6);
 /* harmony import */ var _components_dialogs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(172);
-/* harmony import */ var _components_template__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(32);
+/* harmony import */ var _components_template__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(33);
 /* harmony import */ var _db__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(29);
+/* harmony import */ var _debug__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(173);
+
 
 
 
@@ -118,7 +120,6 @@ __webpack_require__.r(__webpack_exports__);
 // TODO
 // - KYC welcome name var
 // - psp callbacks
-// - referral stats
 // - kyc callback
 // - token number formatting
 // - anonymous chat?
@@ -177,8 +178,8 @@ function logoutAndPrompt() {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _components_calculator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3);
-/* harmony import */ var _components_template__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(32);
-/* harmony import */ var _components_balance__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(160);
+/* harmony import */ var _components_template__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(33);
+/* harmony import */ var _components_balance__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(161);
 /* harmony import */ var _components_supply__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(171);
 
 
@@ -260,7 +261,7 @@ var BASE_BAR_CONFIG = {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _state__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4);
-/* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(31);
+/* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(32);
 
 
 
@@ -342,7 +343,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _session__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(6);
 /* harmony import */ var _ui__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(2);
 /* harmony import */ var _db__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(29);
-/* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(31);
+/* harmony import */ var deepmerge__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(31);
+/* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(32);
+
 
 
 
@@ -368,9 +371,8 @@ var REFERRAL_TRANSACTIONS = [];
 // timestamp of last investment done
 var LAST_INVESTMENT_TIMESTAMP = null;
 
-// cache of total objects
-var _transactions = null;
-var _investors = null;
+const TRANSACTIONS_STORE_KEY = "_transactions";
+const INVESTORS_STORE_KEY = "_investors";
 
 /* harmony default export */ __webpack_exports__["default"] = ({
 
@@ -388,21 +390,48 @@ var _investors = null;
     REFERRAL_TRANSACTIONS = [];
   },
 
+  _storeObject: function(key, value, _default) {
+    localStorage.setItem(key, JSON.stringify(value || _default));
+  },
+
+  _retrieveObject: function(key) {
+    return JSON.parse(localStorage.getItem(key));
+  },
+
   setTransactions: function(tx) {
-    this._transactions = tx;
+    this._storeObject(TRANSACTIONS_STORE_KEY, tx, {});
     this.parseTransactions();
   },
 
+  addTransaction: function(tx, txId) {
+    var oldTx = this.getTransactions();
+    var newTx = {}; newTx[txId] = tx;
+    this._storeObject(TRANSACTIONS_STORE_KEY, Object(deepmerge__WEBPACK_IMPORTED_MODULE_4__["default"])(oldTx, newTx), {});
+    this.parseTransaction(tx);
+  },
+
+  getTransactions: function() {
+    return this._retrieveObject(TRANSACTIONS_STORE_KEY) || {};
+  },
+
   setInvestors: function(investors) {
-    this._investors = investors;
+    this._storeObject(INVESTORS_STORE_KEY, investors, {});
     this.parseInvestors();
+  },
+
+  getInvestors: function() {
+    return this._retrieveObject(INVESTORS_STORE_KEY) || {};
+  },
+
+  getInvestor: function(id) {
+    return this.getInvestors()[id];
   },
 
   parseInvestors: function() {
     console.log("parsing investors");
     this.resetInvestors();
     var refIds = [], that = this;
-    $.each(this._investors, function(investorId, investor) {
+    $.each(this.getInvestors(), function(investorId, investor) {
       if (that.parseInvestor(investorId, investor)) { // if this investor is a referral
         console.log("referral investor found: ", investorId);
         refIds.push(investorId);
@@ -454,7 +483,7 @@ var _investors = null;
     }
   },
 
-  parseSingleTransaction: function(tx) {
+  parseSingleTransaction: function(tx, txId) {
     this.parseTransaction(tx);
     _ui__WEBPACK_IMPORTED_MODULE_2__["default"].update();
   },
@@ -464,7 +493,7 @@ var _investors = null;
     console.log("parsing transactions");
     this.resetTransactions();
     var that = this;
-    $.each(this._transactions, function(key, tx){
+    $.each(this.getTransactions(), function(key, tx){
       that.parseTransaction(tx);
     });
     _ui__WEBPACK_IMPORTED_MODULE_2__["default"].update();
@@ -483,7 +512,7 @@ var _investors = null;
   },
 
   numBaseTokenAmount: function() {
-    return _constants__WEBPACK_IMPORTED_MODULE_4__["BASE_TOKEN_AMOUNT"];
+    return _constants__WEBPACK_IMPORTED_MODULE_5__["BASE_TOKEN_AMOUNT"];
   },
 
   numTotalEuroRaised: function() {
@@ -554,9 +583,13 @@ var _investors = null;
     return REFERRAL_TRANSACTIONS;
   },
 
+  getInvestorBalances: function() {
+    return INVESTOR_BALANCES;
+  },
+
   getInvestorBalance: function(investorId) {
     this.initInvestorBalanceEntry(investorId);
-    return INVESTOR_BALANCES[investorId];
+    return this.getInvestorBalances()[investorId];
   },
 
   getReferralInvestorIds: function() {
@@ -568,7 +601,7 @@ var _investors = null;
       return jQuery.extend(true, {
         id: investorId,
         euroAmount: this.getInvestorBalance(investorId)
-      }, (_investors || {})[investorId]);
+      }, this.getInvestor(investorId));
     }, this);
   },
 
@@ -585,7 +618,7 @@ var _investors = null;
   },
 
   referralFeeModifier: function() {
-    return _constants__WEBPACK_IMPORTED_MODULE_4__["REFERRAL_PERCENT_FEE"] / 100;
+    return _constants__WEBPACK_IMPORTED_MODULE_5__["REFERRAL_PERCENT_FEE"] / 100;
   },
 
   isInvestorOurReferral: function(id) {
@@ -593,15 +626,15 @@ var _investors = null;
   },
 
   tokensSaleAvailable: function() {
-    return _constants__WEBPACK_IMPORTED_MODULE_4__["BASE_TOKEN_AMOUNT"] - this.numTokensSold();
+    return _constants__WEBPACK_IMPORTED_MODULE_5__["BASE_TOKEN_AMOUNT"] - this.numTokensSold();
   },
 
   euroSaleAvailable: function() {
-    return this.tokensSaleAvailable() * _constants__WEBPACK_IMPORTED_MODULE_4__["EURO_PRICE_PER_TOKEN"];
+    return this.tokensSaleAvailable() * _constants__WEBPACK_IMPORTED_MODULE_5__["EURO_PRICE_PER_TOKEN"];
   },
 
   percentTotalSupply: function(tokenAmount) {
-    return _util__WEBPACK_IMPORTED_MODULE_0__["default"].percentageOf(tokenAmount, _constants__WEBPACK_IMPORTED_MODULE_4__["BASE_TOKEN_AMOUNT"]);
+    return _util__WEBPACK_IMPORTED_MODULE_0__["default"].percentageOf(tokenAmount, _constants__WEBPACK_IMPORTED_MODULE_5__["BASE_TOKEN_AMOUNT"]);
   },
 
   // what the amoutn of tokens is relative to total supply
@@ -645,7 +678,7 @@ var _investors = null;
   },
 
   euroToTokenAmount: function(euroAmount) {
-    return euroAmount / _constants__WEBPACK_IMPORTED_MODULE_4__["EURO_PRICE_PER_TOKEN"];
+    return euroAmount / _constants__WEBPACK_IMPORTED_MODULE_5__["EURO_PRICE_PER_TOKEN"];
   }
 });
 
@@ -838,6 +871,10 @@ function isCurrentUser(id) {
   return id == getUserId();
 }
 
+function connection() {
+  return firebase_app__WEBPACK_IMPORTED_MODULE_0___default.a;
+}
+
 function getUserId() {
   return localStorage.getItem('user_id');
 }
@@ -898,7 +935,7 @@ function redirectToDashboardOnLogout() {
 
 /* harmony default export */ __webpack_exports__["default"] = ({
   onLogin, onLogout, login, logout, redirectToDashboardOnLogout,
-  db, dbEnv, isAuthenticated, isCurrentUser,
+  db, dbEnv, isAuthenticated, isCurrentUser, connection,
   getUserId, getUserIdHash, getEmail, getName, getAvatar
 });
 
@@ -23892,7 +23929,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-/* harmony default export */ __webpack_exports__["default"] = ({
+var functions = {
 
   init: function() {
     this.registerInvestorLoggedIn();
@@ -23903,6 +23940,7 @@ __webpack_require__.r(__webpack_exports__);
   // whenever any investor data changes, reparse
   registerInvestorListener: function() {
     this.dbInvestors().on("value", function(investorsSnapshot) {
+      console.log("investors on value() callback");
       _state__WEBPACK_IMPORTED_MODULE_4__["default"].setInvestors(investorsSnapshot.val());
     });
   },
@@ -23910,38 +23948,65 @@ __webpack_require__.r(__webpack_exports__);
   // reparse all transactions when a new one occurs
   registerTransactionListener: function() {
     this.dbTransactions().on("child_added", function(txSnapshot) {
-      _state__WEBPACK_IMPORTED_MODULE_4__["default"].parseSingleTransaction(txSnapshot.val());
+      console.log("transactions on child_added() callback");
+      // State.parseSingleTransaction(txSnapshot.val(), txSnapshot.key);
+      _state__WEBPACK_IMPORTED_MODULE_4__["default"].addTransaction(txSnapshot.val(), txSnapshot.key);
     });
   },
 
   // manually trigger parsing transactions
   refreshTransactions: function() {
     this.dbTransactions().once("value", function(txsSnapshot) {
+      console.log("transactions on value() (once) callback");
       _state__WEBPACK_IMPORTED_MODULE_4__["default"].setTransactions(txsSnapshot.val());
     });
   },
 
   registerInvestorLoggedIn: function() {
     var that = this;
-    this.dbThisInvestor().once('value', function(snapshot) {
-      var exists = (snapshot.val() !== null);
-      if (exists) {
-        that.registerInvestorMeta();
-      }
-      else {
-        that.initInvestorMeta();
-      }
-    });
+    this.dbThisInvestor()
+      .once('value', function(snapshot) {
+        var exists = (snapshot.val() !== null);
+        if (exists) {
+          that.registerInvestorMeta();
+        }
+        else {
+          that.initInvestorMeta();
+        }
+      })
+      .catch(function(error) {
+        console.error('failed to get investor list: ', error);
+      });;
   },
 
   initInvestorMeta: function() {
-    console.log("initialized entry for investor: ", _session__WEBPACK_IMPORTED_MODULE_1__["default"].getUserId());
-    this.dbThisInvestor().set({
-      referrer: _referrer__WEBPACK_IMPORTED_MODULE_2__["default"].get(),
-      kycDone: false,
-      registrationTimestamp: _util__WEBPACK_IMPORTED_MODULE_3__["default"].now()
-    });
+    this._initInvestorMeta(_session__WEBPACK_IMPORTED_MODULE_1__["default"].getUserId(), _referrer__WEBPACK_IMPORTED_MODULE_2__["default"].get());
     this.registerInvestorLastSeenTimestamp();
+  },
+
+  // useful for debugging
+  _initInvestorMeta: function(investorId, referrer) {
+    console.log(`initialized entry for investor: ${investorId} with referrer: ${referrer}`);
+    this.dbInvestor(investorId).set({
+      referrer: referrer,
+      kycDone: false,
+      registrationTimestamp: this.dbTimestamp()
+    })
+    .catch(function(error) {
+      console.error('failed to register new investor: ', error);
+    });
+  },
+
+  _initTransaction: function(investorId, euroAmount) {
+    console.log(`initialized tx for investor ${investorId} of €${euroAmount}`);
+    this.dbTransactions().push({
+      timestamp: this.dbTimestamp(),
+      investorId: investorId,
+      euroAmount: euroAmount
+    })
+    .catch(function(error) {
+      console.error('failed to push new transaction: ', error);
+    });
   },
 
   registerInvestorMeta: function() {
@@ -23953,8 +24018,11 @@ __webpack_require__.r(__webpack_exports__);
     this.dbEnv()
       .child("logins")
       .push({
-        timestamp: _util__WEBPACK_IMPORTED_MODULE_3__["default"].now(),
+        timestamp: this.dbTimestamp(),
         investor: _session__WEBPACK_IMPORTED_MODULE_1__["default"].getUserId()
+      })
+      .catch(function(error) {
+        console.error('failed to register last seen timestamp: ', error);
       });
   },
 
@@ -23962,7 +24030,9 @@ __webpack_require__.r(__webpack_exports__);
   // and therefore the registration is not run
   registerReferrer: function() {
     if (_referrer__WEBPACK_IMPORTED_MODULE_2__["default"].hasReferrer()) {
-      this.dbThisInvestorReferrer().set(_referrer__WEBPACK_IMPORTED_MODULE_2__["default"].get());
+      this.dbThisInvestorReferrer().set(_referrer__WEBPACK_IMPORTED_MODULE_2__["default"].get()).catch(function(error) {
+        console.error('failed to register referrer: ', error);
+      });
     }
   },
 
@@ -23982,8 +24052,12 @@ __webpack_require__.r(__webpack_exports__);
     return this.dbEnv().child('investors');
   },
 
+  dbInvestor: function(id) {
+    return this.dbInvestors().child(id);
+  },
+
   dbThisInvestor: function() {
-    return this.dbInvestors().child(_session__WEBPACK_IMPORTED_MODULE_1__["default"].getUserId());
+    return this.dbInvestor(_session__WEBPACK_IMPORTED_MODULE_1__["default"].getUserId());
   },
 
   dbThisInvestorUserData: function() {
@@ -23994,10 +24068,16 @@ __webpack_require__.r(__webpack_exports__);
     return this.dbThisInvestor().child("referrer");
   },
 
+  dbTimestamp: function() {
+    return _session__WEBPACK_IMPORTED_MODULE_1__["default"].connection().database.ServerValue.TIMESTAMP;
+  },
+
   // dbThisInvestorDeposits: function() {
   //   return this.dbThisInvestor().child("deposits");
   // },
-});
+};
+
+/* harmony default export */ __webpack_exports__["default"] = (functions);
 
 
 /***/ }),
@@ -24086,6 +24166,103 @@ function isInvestorOurReferral(id) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+var isMergeableObject = function isMergeableObject(value) {
+	return isNonNullObject(value)
+		&& !isSpecial(value)
+};
+
+function isNonNullObject(value) {
+	return !!value && typeof value === 'object'
+}
+
+function isSpecial(value) {
+	var stringValue = Object.prototype.toString.call(value);
+
+	return stringValue === '[object RegExp]'
+		|| stringValue === '[object Date]'
+		|| isReactElement(value)
+}
+
+// see https://github.com/facebook/react/blob/b5ac963fb791d1298e7f396236383bc955f916c1/src/isomorphic/classic/element/ReactElement.js#L21-L25
+var canUseSymbol = typeof Symbol === 'function' && Symbol.for;
+var REACT_ELEMENT_TYPE = canUseSymbol ? Symbol.for('react.element') : 0xeac7;
+
+function isReactElement(value) {
+	return value.$$typeof === REACT_ELEMENT_TYPE
+}
+
+function emptyTarget(val) {
+	return Array.isArray(val) ? [] : {}
+}
+
+function cloneUnlessOtherwiseSpecified(value, options) {
+	return (options.clone !== false && options.isMergeableObject(value))
+		? deepmerge(emptyTarget(value), value, options)
+		: value
+}
+
+function defaultArrayMerge(target, source, options) {
+	return target.concat(source).map(function(element) {
+		return cloneUnlessOtherwiseSpecified(element, options)
+	})
+}
+
+function mergeObject(target, source, options) {
+	var destination = {};
+	if (options.isMergeableObject(target)) {
+		Object.keys(target).forEach(function(key) {
+			destination[key] = cloneUnlessOtherwiseSpecified(target[key], options);
+		});
+	}
+	Object.keys(source).forEach(function(key) {
+		if (!options.isMergeableObject(source[key]) || !target[key]) {
+			destination[key] = cloneUnlessOtherwiseSpecified(source[key], options);
+		} else {
+			destination[key] = deepmerge(target[key], source[key], options);
+		}
+	});
+	return destination
+}
+
+function deepmerge(target, source, options) {
+	options = options || {};
+	options.arrayMerge = options.arrayMerge || defaultArrayMerge;
+	options.isMergeableObject = options.isMergeableObject || isMergeableObject;
+
+	var sourceIsArray = Array.isArray(source);
+	var targetIsArray = Array.isArray(target);
+	var sourceAndTargetTypesMatch = sourceIsArray === targetIsArray;
+
+	if (!sourceAndTargetTypesMatch) {
+		return cloneUnlessOtherwiseSpecified(source, options)
+	} else if (sourceIsArray) {
+		return options.arrayMerge(target, source, options)
+	} else {
+		return mergeObject(target, source, options)
+	}
+}
+
+deepmerge.all = function deepmergeAll(array, options) {
+	if (!Array.isArray(array)) {
+		throw new Error('first argument should be an array')
+	}
+
+	return array.reduce(function(prev, next) {
+		return deepmerge(prev, next, options)
+	}, {})
+};
+
+var deepmerge_1 = deepmerge;
+
+/* harmony default export */ __webpack_exports__["default"] = (deepmerge_1);
+
+
+/***/ }),
+/* 32 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "BASE_TOKEN_AMOUNT", function() { return BASE_TOKEN_AMOUNT; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "EURO_PRICE_PER_TOKEN", function() { return EURO_PRICE_PER_TOKEN; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "REFERRAL_PERCENT_FEE", function() { return REFERRAL_PERCENT_FEE; });
@@ -24095,7 +24272,7 @@ const REFERRAL_PERCENT_FEE = 2;
 
 
 /***/ }),
-/* 32 */
+/* 33 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -24103,7 +24280,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _index__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
 /* harmony import */ var _session__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(6);
 /* harmony import */ var _state__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(4);
-/* harmony import */ var _referrals__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(33);
+/* harmony import */ var _referrals__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(34);
 
 
 
@@ -24141,17 +24318,17 @@ function bindKYCFormEmail() {
 
 
 /***/ }),
-/* 33 */
+/* 34 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _session__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6);
 /* harmony import */ var _state__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4);
-/* harmony import */ var moment__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(34);
+/* harmony import */ var moment__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(35);
 /* harmony import */ var moment__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(moment__WEBPACK_IMPORTED_MODULE_2__);
 /* harmony import */ var _ui__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(2);
-/* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(31);
+/* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(32);
 
 
 
@@ -24251,7 +24428,7 @@ function bindReferralStats() {
 
 
 /***/ }),
-/* 34 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(module) {var require;//! moment.js
@@ -26088,7 +26265,7 @@ function bindReferralStats() {
             try {
                 oldLocale = globalLocale._abbr;
                 var aliasedRequire = require;
-                __webpack_require__(36)("./" + name);
+                __webpack_require__(37)("./" + name);
                 getSetGlobalLocale(oldLocale);
             } catch (e) {}
         }
@@ -28760,10 +28937,10 @@ function bindReferralStats() {
 
 })));
 
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(35)(module)))
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(36)(module)))
 
 /***/ }),
-/* 35 */
+/* 36 */
 /***/ (function(module, exports) {
 
 module.exports = function(module) {
@@ -28791,256 +28968,256 @@ module.exports = function(module) {
 
 
 /***/ }),
-/* 36 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var map = {
-	"./af": 37,
-	"./af.js": 37,
-	"./ar": 38,
-	"./ar-dz": 39,
-	"./ar-dz.js": 39,
-	"./ar-kw": 40,
-	"./ar-kw.js": 40,
-	"./ar-ly": 41,
-	"./ar-ly.js": 41,
-	"./ar-ma": 42,
-	"./ar-ma.js": 42,
-	"./ar-sa": 43,
-	"./ar-sa.js": 43,
-	"./ar-tn": 44,
-	"./ar-tn.js": 44,
-	"./ar.js": 38,
-	"./az": 45,
-	"./az.js": 45,
-	"./be": 46,
-	"./be.js": 46,
-	"./bg": 47,
-	"./bg.js": 47,
-	"./bm": 48,
-	"./bm.js": 48,
-	"./bn": 49,
-	"./bn.js": 49,
-	"./bo": 50,
-	"./bo.js": 50,
-	"./br": 51,
-	"./br.js": 51,
-	"./bs": 52,
-	"./bs.js": 52,
-	"./ca": 53,
-	"./ca.js": 53,
-	"./cs": 54,
-	"./cs.js": 54,
-	"./cv": 55,
-	"./cv.js": 55,
-	"./cy": 56,
-	"./cy.js": 56,
-	"./da": 57,
-	"./da.js": 57,
-	"./de": 58,
-	"./de-at": 59,
-	"./de-at.js": 59,
-	"./de-ch": 60,
-	"./de-ch.js": 60,
-	"./de.js": 58,
-	"./dv": 61,
-	"./dv.js": 61,
-	"./el": 62,
-	"./el.js": 62,
-	"./en-au": 63,
-	"./en-au.js": 63,
-	"./en-ca": 64,
-	"./en-ca.js": 64,
-	"./en-gb": 65,
-	"./en-gb.js": 65,
-	"./en-ie": 66,
-	"./en-ie.js": 66,
-	"./en-il": 67,
-	"./en-il.js": 67,
-	"./en-nz": 68,
-	"./en-nz.js": 68,
-	"./eo": 69,
-	"./eo.js": 69,
-	"./es": 70,
-	"./es-do": 71,
-	"./es-do.js": 71,
-	"./es-us": 72,
-	"./es-us.js": 72,
-	"./es.js": 70,
-	"./et": 73,
-	"./et.js": 73,
-	"./eu": 74,
-	"./eu.js": 74,
-	"./fa": 75,
-	"./fa.js": 75,
-	"./fi": 76,
-	"./fi.js": 76,
-	"./fo": 77,
-	"./fo.js": 77,
-	"./fr": 78,
-	"./fr-ca": 79,
-	"./fr-ca.js": 79,
-	"./fr-ch": 80,
-	"./fr-ch.js": 80,
-	"./fr.js": 78,
-	"./fy": 81,
-	"./fy.js": 81,
-	"./gd": 82,
-	"./gd.js": 82,
-	"./gl": 83,
-	"./gl.js": 83,
-	"./gom-latn": 84,
-	"./gom-latn.js": 84,
-	"./gu": 85,
-	"./gu.js": 85,
-	"./he": 86,
-	"./he.js": 86,
-	"./hi": 87,
-	"./hi.js": 87,
-	"./hr": 88,
-	"./hr.js": 88,
-	"./hu": 89,
-	"./hu.js": 89,
-	"./hy-am": 90,
-	"./hy-am.js": 90,
-	"./id": 91,
-	"./id.js": 91,
-	"./is": 92,
-	"./is.js": 92,
-	"./it": 93,
-	"./it.js": 93,
-	"./ja": 94,
-	"./ja.js": 94,
-	"./jv": 95,
-	"./jv.js": 95,
-	"./ka": 96,
-	"./ka.js": 96,
-	"./kk": 97,
-	"./kk.js": 97,
-	"./km": 98,
-	"./km.js": 98,
-	"./kn": 99,
-	"./kn.js": 99,
-	"./ko": 100,
-	"./ko.js": 100,
-	"./ky": 101,
-	"./ky.js": 101,
-	"./lb": 102,
-	"./lb.js": 102,
-	"./lo": 103,
-	"./lo.js": 103,
-	"./lt": 104,
-	"./lt.js": 104,
-	"./lv": 105,
-	"./lv.js": 105,
-	"./me": 106,
-	"./me.js": 106,
-	"./mi": 107,
-	"./mi.js": 107,
-	"./mk": 108,
-	"./mk.js": 108,
-	"./ml": 109,
-	"./ml.js": 109,
-	"./mn": 110,
-	"./mn.js": 110,
-	"./mr": 111,
-	"./mr.js": 111,
-	"./ms": 112,
-	"./ms-my": 113,
-	"./ms-my.js": 113,
-	"./ms.js": 112,
-	"./mt": 114,
-	"./mt.js": 114,
-	"./my": 115,
-	"./my.js": 115,
-	"./nb": 116,
-	"./nb.js": 116,
-	"./ne": 117,
-	"./ne.js": 117,
-	"./nl": 118,
-	"./nl-be": 119,
-	"./nl-be.js": 119,
-	"./nl.js": 118,
-	"./nn": 120,
-	"./nn.js": 120,
-	"./pa-in": 121,
-	"./pa-in.js": 121,
-	"./pl": 122,
-	"./pl.js": 122,
-	"./pt": 123,
-	"./pt-br": 124,
-	"./pt-br.js": 124,
-	"./pt.js": 123,
-	"./ro": 125,
-	"./ro.js": 125,
-	"./ru": 126,
-	"./ru.js": 126,
-	"./sd": 127,
-	"./sd.js": 127,
-	"./se": 128,
-	"./se.js": 128,
-	"./si": 129,
-	"./si.js": 129,
-	"./sk": 130,
-	"./sk.js": 130,
-	"./sl": 131,
-	"./sl.js": 131,
-	"./sq": 132,
-	"./sq.js": 132,
-	"./sr": 133,
-	"./sr-cyrl": 134,
-	"./sr-cyrl.js": 134,
-	"./sr.js": 133,
-	"./ss": 135,
-	"./ss.js": 135,
-	"./sv": 136,
-	"./sv.js": 136,
-	"./sw": 137,
-	"./sw.js": 137,
-	"./ta": 138,
-	"./ta.js": 138,
-	"./te": 139,
-	"./te.js": 139,
-	"./tet": 140,
-	"./tet.js": 140,
-	"./tg": 141,
-	"./tg.js": 141,
-	"./th": 142,
-	"./th.js": 142,
-	"./tl-ph": 143,
-	"./tl-ph.js": 143,
-	"./tlh": 144,
-	"./tlh.js": 144,
-	"./tr": 145,
-	"./tr.js": 145,
-	"./tzl": 146,
-	"./tzl.js": 146,
-	"./tzm": 147,
-	"./tzm-latn": 148,
-	"./tzm-latn.js": 148,
-	"./tzm.js": 147,
-	"./ug-cn": 149,
-	"./ug-cn.js": 149,
-	"./uk": 150,
-	"./uk.js": 150,
-	"./ur": 151,
-	"./ur.js": 151,
-	"./uz": 152,
-	"./uz-latn": 153,
-	"./uz-latn.js": 153,
-	"./uz.js": 152,
-	"./vi": 154,
-	"./vi.js": 154,
-	"./x-pseudo": 155,
-	"./x-pseudo.js": 155,
-	"./yo": 156,
-	"./yo.js": 156,
-	"./zh-cn": 157,
-	"./zh-cn.js": 157,
-	"./zh-hk": 158,
-	"./zh-hk.js": 158,
-	"./zh-tw": 159,
-	"./zh-tw.js": 159
+	"./af": 38,
+	"./af.js": 38,
+	"./ar": 39,
+	"./ar-dz": 40,
+	"./ar-dz.js": 40,
+	"./ar-kw": 41,
+	"./ar-kw.js": 41,
+	"./ar-ly": 42,
+	"./ar-ly.js": 42,
+	"./ar-ma": 43,
+	"./ar-ma.js": 43,
+	"./ar-sa": 44,
+	"./ar-sa.js": 44,
+	"./ar-tn": 45,
+	"./ar-tn.js": 45,
+	"./ar.js": 39,
+	"./az": 46,
+	"./az.js": 46,
+	"./be": 47,
+	"./be.js": 47,
+	"./bg": 48,
+	"./bg.js": 48,
+	"./bm": 49,
+	"./bm.js": 49,
+	"./bn": 50,
+	"./bn.js": 50,
+	"./bo": 51,
+	"./bo.js": 51,
+	"./br": 52,
+	"./br.js": 52,
+	"./bs": 53,
+	"./bs.js": 53,
+	"./ca": 54,
+	"./ca.js": 54,
+	"./cs": 55,
+	"./cs.js": 55,
+	"./cv": 56,
+	"./cv.js": 56,
+	"./cy": 57,
+	"./cy.js": 57,
+	"./da": 58,
+	"./da.js": 58,
+	"./de": 59,
+	"./de-at": 60,
+	"./de-at.js": 60,
+	"./de-ch": 61,
+	"./de-ch.js": 61,
+	"./de.js": 59,
+	"./dv": 62,
+	"./dv.js": 62,
+	"./el": 63,
+	"./el.js": 63,
+	"./en-au": 64,
+	"./en-au.js": 64,
+	"./en-ca": 65,
+	"./en-ca.js": 65,
+	"./en-gb": 66,
+	"./en-gb.js": 66,
+	"./en-ie": 67,
+	"./en-ie.js": 67,
+	"./en-il": 68,
+	"./en-il.js": 68,
+	"./en-nz": 69,
+	"./en-nz.js": 69,
+	"./eo": 70,
+	"./eo.js": 70,
+	"./es": 71,
+	"./es-do": 72,
+	"./es-do.js": 72,
+	"./es-us": 73,
+	"./es-us.js": 73,
+	"./es.js": 71,
+	"./et": 74,
+	"./et.js": 74,
+	"./eu": 75,
+	"./eu.js": 75,
+	"./fa": 76,
+	"./fa.js": 76,
+	"./fi": 77,
+	"./fi.js": 77,
+	"./fo": 78,
+	"./fo.js": 78,
+	"./fr": 79,
+	"./fr-ca": 80,
+	"./fr-ca.js": 80,
+	"./fr-ch": 81,
+	"./fr-ch.js": 81,
+	"./fr.js": 79,
+	"./fy": 82,
+	"./fy.js": 82,
+	"./gd": 83,
+	"./gd.js": 83,
+	"./gl": 84,
+	"./gl.js": 84,
+	"./gom-latn": 85,
+	"./gom-latn.js": 85,
+	"./gu": 86,
+	"./gu.js": 86,
+	"./he": 87,
+	"./he.js": 87,
+	"./hi": 88,
+	"./hi.js": 88,
+	"./hr": 89,
+	"./hr.js": 89,
+	"./hu": 90,
+	"./hu.js": 90,
+	"./hy-am": 91,
+	"./hy-am.js": 91,
+	"./id": 92,
+	"./id.js": 92,
+	"./is": 93,
+	"./is.js": 93,
+	"./it": 94,
+	"./it.js": 94,
+	"./ja": 95,
+	"./ja.js": 95,
+	"./jv": 96,
+	"./jv.js": 96,
+	"./ka": 97,
+	"./ka.js": 97,
+	"./kk": 98,
+	"./kk.js": 98,
+	"./km": 99,
+	"./km.js": 99,
+	"./kn": 100,
+	"./kn.js": 100,
+	"./ko": 101,
+	"./ko.js": 101,
+	"./ky": 102,
+	"./ky.js": 102,
+	"./lb": 103,
+	"./lb.js": 103,
+	"./lo": 104,
+	"./lo.js": 104,
+	"./lt": 105,
+	"./lt.js": 105,
+	"./lv": 106,
+	"./lv.js": 106,
+	"./me": 107,
+	"./me.js": 107,
+	"./mi": 108,
+	"./mi.js": 108,
+	"./mk": 109,
+	"./mk.js": 109,
+	"./ml": 110,
+	"./ml.js": 110,
+	"./mn": 111,
+	"./mn.js": 111,
+	"./mr": 112,
+	"./mr.js": 112,
+	"./ms": 113,
+	"./ms-my": 114,
+	"./ms-my.js": 114,
+	"./ms.js": 113,
+	"./mt": 115,
+	"./mt.js": 115,
+	"./my": 116,
+	"./my.js": 116,
+	"./nb": 117,
+	"./nb.js": 117,
+	"./ne": 118,
+	"./ne.js": 118,
+	"./nl": 119,
+	"./nl-be": 120,
+	"./nl-be.js": 120,
+	"./nl.js": 119,
+	"./nn": 121,
+	"./nn.js": 121,
+	"./pa-in": 122,
+	"./pa-in.js": 122,
+	"./pl": 123,
+	"./pl.js": 123,
+	"./pt": 124,
+	"./pt-br": 125,
+	"./pt-br.js": 125,
+	"./pt.js": 124,
+	"./ro": 126,
+	"./ro.js": 126,
+	"./ru": 127,
+	"./ru.js": 127,
+	"./sd": 128,
+	"./sd.js": 128,
+	"./se": 129,
+	"./se.js": 129,
+	"./si": 130,
+	"./si.js": 130,
+	"./sk": 131,
+	"./sk.js": 131,
+	"./sl": 132,
+	"./sl.js": 132,
+	"./sq": 133,
+	"./sq.js": 133,
+	"./sr": 134,
+	"./sr-cyrl": 135,
+	"./sr-cyrl.js": 135,
+	"./sr.js": 134,
+	"./ss": 136,
+	"./ss.js": 136,
+	"./sv": 137,
+	"./sv.js": 137,
+	"./sw": 138,
+	"./sw.js": 138,
+	"./ta": 139,
+	"./ta.js": 139,
+	"./te": 140,
+	"./te.js": 140,
+	"./tet": 141,
+	"./tet.js": 141,
+	"./tg": 142,
+	"./tg.js": 142,
+	"./th": 143,
+	"./th.js": 143,
+	"./tl-ph": 144,
+	"./tl-ph.js": 144,
+	"./tlh": 145,
+	"./tlh.js": 145,
+	"./tr": 146,
+	"./tr.js": 146,
+	"./tzl": 147,
+	"./tzl.js": 147,
+	"./tzm": 148,
+	"./tzm-latn": 149,
+	"./tzm-latn.js": 149,
+	"./tzm.js": 148,
+	"./ug-cn": 150,
+	"./ug-cn.js": 150,
+	"./uk": 151,
+	"./uk.js": 151,
+	"./ur": 152,
+	"./ur.js": 152,
+	"./uz": 153,
+	"./uz-latn": 154,
+	"./uz-latn.js": 154,
+	"./uz.js": 153,
+	"./vi": 155,
+	"./vi.js": 155,
+	"./x-pseudo": 156,
+	"./x-pseudo.js": 156,
+	"./yo": 157,
+	"./yo.js": 157,
+	"./zh-cn": 158,
+	"./zh-cn.js": 158,
+	"./zh-hk": 159,
+	"./zh-hk.js": 159,
+	"./zh-tw": 160,
+	"./zh-tw.js": 160
 };
 
 
@@ -29062,16 +29239,16 @@ webpackContext.keys = function webpackContextKeys() {
 };
 webpackContext.resolve = webpackContextResolve;
 module.exports = webpackContext;
-webpackContext.id = 36;
+webpackContext.id = 37;
 
 /***/ }),
-/* 37 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -29141,13 +29318,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 38 */
+/* 39 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -29279,13 +29456,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 39 */
+/* 40 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -29341,13 +29518,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 40 */
+/* 41 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -29403,13 +29580,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 41 */
+/* 42 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -29528,13 +29705,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 42 */
+/* 43 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -29590,13 +29767,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 43 */
+/* 44 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -29697,13 +29874,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 44 */
+/* 45 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -29759,13 +29936,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 45 */
+/* 46 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -29867,13 +30044,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 46 */
+/* 47 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -30002,13 +30179,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 47 */
+/* 48 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -30095,13 +30272,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 48 */
+/* 49 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -30156,13 +30333,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 49 */
+/* 50 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -30278,13 +30455,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 50 */
+/* 51 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -30400,13 +30577,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 51 */
+/* 52 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -30511,13 +30688,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 52 */
+/* 53 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -30665,13 +30842,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 53 */
+/* 54 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -30756,13 +30933,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 54 */
+/* 55 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -30938,13 +31115,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 55 */
+/* 56 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -31004,13 +31181,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 56 */
+/* 57 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -31087,13 +31264,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 57 */
+/* 58 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -31150,13 +31327,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 58 */
+/* 59 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -31229,13 +31406,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 59 */
+/* 60 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -31308,13 +31485,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 60 */
+/* 61 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -31387,13 +31564,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 61 */
+/* 62 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -31489,13 +31666,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 62 */
+/* 63 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -31592,13 +31769,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 63 */
+/* 64 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -31662,13 +31839,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 64 */
+/* 65 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -31728,13 +31905,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 65 */
+/* 66 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -31798,13 +31975,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 66 */
+/* 67 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -31868,13 +32045,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 67 */
+/* 68 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -31933,13 +32110,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 68 */
+/* 69 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -32003,13 +32180,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 69 */
+/* 70 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -32077,13 +32254,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 70 */
+/* 71 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -32172,13 +32349,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 71 */
+/* 72 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -32267,13 +32444,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 72 */
+/* 73 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -32353,13 +32530,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 73 */
+/* 74 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -32436,13 +32613,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 74 */
+/* 75 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -32505,13 +32682,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 75 */
+/* 76 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -32614,13 +32791,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 76 */
+/* 77 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -32726,13 +32903,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 77 */
+/* 78 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -32789,13 +32966,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 78 */
+/* 79 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -32875,13 +33052,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 79 */
+/* 80 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -32952,13 +33129,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 80 */
+/* 81 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -33033,13 +33210,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 81 */
+/* 82 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -33111,13 +33288,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 82 */
+/* 83 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -33190,13 +33367,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 83 */
+/* 84 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -33270,13 +33447,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 84 */
+/* 85 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -33396,13 +33573,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 85 */
+/* 86 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -33523,13 +33700,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 86 */
+/* 87 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -33623,13 +33800,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 87 */
+/* 88 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -33750,13 +33927,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 88 */
+/* 89 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -33907,13 +34084,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 89 */
+/* 90 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -34020,13 +34197,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 90 */
+/* 91 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -34118,13 +34295,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 91 */
+/* 92 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -34203,13 +34380,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 92 */
+/* 93 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -34338,13 +34515,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 93 */
+/* 94 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -34410,13 +34587,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 94 */
+/* 95 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -34505,13 +34682,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 95 */
+/* 96 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -34590,13 +34767,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 96 */
+/* 97 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -34682,13 +34859,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 97 */
+/* 98 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -34772,13 +34949,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 98 */
+/* 99 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -34885,13 +35062,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 99 */
+/* 100 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -35014,13 +35191,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 100 */
+/* 101 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -35098,13 +35275,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 101 */
+/* 102 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -35188,13 +35365,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 102 */
+/* 103 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -35327,13 +35504,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 103 */
+/* 104 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -35400,13 +35577,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 104 */
+/* 105 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -35521,13 +35698,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 105 */
+/* 106 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -35621,13 +35798,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 106 */
+/* 107 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -35736,13 +35913,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 107 */
+/* 108 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -35803,13 +35980,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 108 */
+/* 109 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -35896,13 +36073,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 109 */
+/* 110 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -35980,13 +36157,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 110 */
+/* 111 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -36087,13 +36264,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 111 */
+/* 112 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -36250,13 +36427,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 112 */
+/* 113 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -36335,13 +36512,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 113 */
+/* 114 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -36420,13 +36597,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 114 */
+/* 115 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -36483,13 +36660,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 115 */
+/* 116 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -36579,13 +36756,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 116 */
+/* 117 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -36644,13 +36821,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 117 */
+/* 118 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -36770,13 +36947,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 118 */
+/* 119 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -36860,13 +37037,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 119 */
+/* 120 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -36950,13 +37127,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 120 */
+/* 121 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -37013,13 +37190,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 121 */
+/* 122 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -37140,13 +37317,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 122 */
+/* 123 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -37269,13 +37446,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 123 */
+/* 124 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -37337,13 +37514,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 124 */
+/* 125 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -37401,13 +37578,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 125 */
+/* 126 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -37479,13 +37656,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 126 */
+/* 127 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -37664,13 +37841,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 127 */
+/* 128 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -37765,13 +37942,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 128 */
+/* 129 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -37828,13 +38005,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 129 */
+/* 130 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -37902,13 +38079,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 130 */
+/* 131 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -38061,13 +38238,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 131 */
+/* 132 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -38237,13 +38414,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 132 */
+/* 133 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -38308,13 +38485,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 133 */
+/* 134 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -38422,13 +38599,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 134 */
+/* 135 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -38536,13 +38713,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 135 */
+/* 136 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -38627,13 +38804,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 136 */
+/* 137 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -38699,13 +38876,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 137 */
+/* 138 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -38761,13 +38938,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 138 */
+/* 139 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -38893,13 +39070,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 139 */
+/* 140 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -38985,13 +39162,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 140 */
+/* 141 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -39055,13 +39232,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 141 */
+/* 142 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -39174,13 +39351,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 142 */
+/* 143 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -39244,13 +39421,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 143 */
+/* 144 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -39309,13 +39486,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 144 */
+/* 145 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -39434,12 +39611,12 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 145 */
+/* 146 */
 /***/ (function(module, exports, __webpack_require__) {
 
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -39531,13 +39708,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 146 */
+/* 147 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -39625,13 +39802,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 147 */
+/* 148 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -39686,13 +39863,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 148 */
+/* 149 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -39747,13 +39924,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 149 */
+/* 150 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js language configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -39869,13 +40046,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 150 */
+/* 151 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -40023,13 +40200,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 151 */
+/* 152 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -40124,13 +40301,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 152 */
+/* 153 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -40185,13 +40362,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 153 */
+/* 154 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -40246,13 +40423,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 154 */
+/* 155 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -40328,13 +40505,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 155 */
+/* 156 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -40399,13 +40576,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 156 */
+/* 157 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -40462,13 +40639,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 157 */
+/* 158 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -40575,13 +40752,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 158 */
+/* 159 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -40681,13 +40858,13 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 159 */
+/* 160 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(34)) :
+    true ? factory(__webpack_require__(35)) :
    undefined
 }(this, (function (moment) { 'use strict';
 
@@ -40787,14 +40964,14 @@ webpackContext.id = 36;
 
 
 /***/ }),
-/* 160 */
+/* 161 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _state__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4);
 /* harmony import */ var _ui__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2);
-/* harmony import */ var deepmerge__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(161);
+/* harmony import */ var deepmerge__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(31);
 /* harmony import */ var progressbar_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(162);
 /* harmony import */ var progressbar_js__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(progressbar_js__WEBPACK_IMPORTED_MODULE_3__);
 /* harmony import */ var jquery_animate_number__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(170);
@@ -40862,103 +41039,6 @@ function createTokenShareBarUI() {
 }
 
 /* harmony default export */ __webpack_exports__["default"] = ({init, update});
-
-
-/***/ }),
-/* 161 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-var isMergeableObject = function isMergeableObject(value) {
-	return isNonNullObject(value)
-		&& !isSpecial(value)
-};
-
-function isNonNullObject(value) {
-	return !!value && typeof value === 'object'
-}
-
-function isSpecial(value) {
-	var stringValue = Object.prototype.toString.call(value);
-
-	return stringValue === '[object RegExp]'
-		|| stringValue === '[object Date]'
-		|| isReactElement(value)
-}
-
-// see https://github.com/facebook/react/blob/b5ac963fb791d1298e7f396236383bc955f916c1/src/isomorphic/classic/element/ReactElement.js#L21-L25
-var canUseSymbol = typeof Symbol === 'function' && Symbol.for;
-var REACT_ELEMENT_TYPE = canUseSymbol ? Symbol.for('react.element') : 0xeac7;
-
-function isReactElement(value) {
-	return value.$$typeof === REACT_ELEMENT_TYPE
-}
-
-function emptyTarget(val) {
-	return Array.isArray(val) ? [] : {}
-}
-
-function cloneUnlessOtherwiseSpecified(value, options) {
-	return (options.clone !== false && options.isMergeableObject(value))
-		? deepmerge(emptyTarget(value), value, options)
-		: value
-}
-
-function defaultArrayMerge(target, source, options) {
-	return target.concat(source).map(function(element) {
-		return cloneUnlessOtherwiseSpecified(element, options)
-	})
-}
-
-function mergeObject(target, source, options) {
-	var destination = {};
-	if (options.isMergeableObject(target)) {
-		Object.keys(target).forEach(function(key) {
-			destination[key] = cloneUnlessOtherwiseSpecified(target[key], options);
-		});
-	}
-	Object.keys(source).forEach(function(key) {
-		if (!options.isMergeableObject(source[key]) || !target[key]) {
-			destination[key] = cloneUnlessOtherwiseSpecified(source[key], options);
-		} else {
-			destination[key] = deepmerge(target[key], source[key], options);
-		}
-	});
-	return destination
-}
-
-function deepmerge(target, source, options) {
-	options = options || {};
-	options.arrayMerge = options.arrayMerge || defaultArrayMerge;
-	options.isMergeableObject = options.isMergeableObject || isMergeableObject;
-
-	var sourceIsArray = Array.isArray(source);
-	var targetIsArray = Array.isArray(target);
-	var sourceAndTargetTypesMatch = sourceIsArray === targetIsArray;
-
-	if (!sourceAndTargetTypesMatch) {
-		return cloneUnlessOtherwiseSpecified(source, options)
-	} else if (sourceIsArray) {
-		return options.arrayMerge(target, source, options)
-	} else {
-		return mergeObject(target, source, options)
-	}
-}
-
-deepmerge.all = function deepmergeAll(array, options) {
-	if (!Array.isArray(array)) {
-		throw new Error('first argument should be an array')
-	}
-
-	return array.reduce(function(prev, next) {
-		return deepmerge(prev, next, options)
-	}, {})
-};
-
-var deepmerge_1 = deepmerge;
-
-/* harmony default export */ __webpack_exports__["default"] = (deepmerge_1);
 
 
 /***/ }),
@@ -43603,7 +43683,7 @@ module.exports = SemiCircle;
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _state__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4);
 /* harmony import */ var _ui__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2);
-/* harmony import */ var deepmerge__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(161);
+/* harmony import */ var deepmerge__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(31);
 /* harmony import */ var progressbar_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(162);
 /* harmony import */ var progressbar_js__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(progressbar_js__WEBPACK_IMPORTED_MODULE_3__);
 
@@ -43688,6 +43768,88 @@ function showError(code, message) {
 
 /***/ }),
 /* 173 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _state__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4);
+/* harmony import */ var _db__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(29);
+/* harmony import */ var _session__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(6);
+
+
+
+
+const DEBUG_PREFIX = "debug_";
+
+window._troovebird = {
+
+  //
+  // NEW DEBUG ENTRIES
+  //
+
+  _newInvestor: function(referrer) {
+    var randomId = Math.random().toString(36).substr(2, 30);
+    var id = DEBUG_PREFIX + randomId;
+    _db__WEBPACK_IMPORTED_MODULE_1__["default"]._initInvestorMeta(id, referrer);
+    return id;
+  },
+
+  _newRefInvestor: function() {
+    return this._newInvestor(_session__WEBPACK_IMPORTED_MODULE_2__["default"].getUserId());
+  },
+
+  _newTx: function(investorId, euroAmount) {
+    var randomAmount = Math.floor(Math.random() * Math.floor(300000));
+    _db__WEBPACK_IMPORTED_MODULE_1__["default"]._initTransaction(investorId || this._newInvestor(), euroAmount || randomAmount);
+  },
+
+  _newRefTx: function(investorId, euroAmount) {
+    this._newTx(investorId || this._newRefInvestor(), euroAmount);
+  },
+
+  //
+  // INSPECT ENV
+  //
+
+  _dumpBalances: function() {
+    console.log(_state__WEBPACK_IMPORTED_MODULE_0__["default"].getInvestorBalances());
+  },
+
+  _dumpInvestors: function() {
+    console.log(_state__WEBPACK_IMPORTED_MODULE_0__["default"].getInvestors());
+  },
+
+  _dumpInvestorReferrals: function() {
+    console.log(_state__WEBPACK_IMPORTED_MODULE_0__["default"].getReferralInvestorIds());
+  },
+
+  _dumpTxs: function() {
+    console.log(_state__WEBPACK_IMPORTED_MODULE_0__["default"].getTransactions());
+  },
+
+  //
+  // CLEAR
+  //
+
+  _clearInvestors: function() {
+    console.log("clearing investors");
+    _db__WEBPACK_IMPORTED_MODULE_1__["default"].dbInvestors().remove();
+  },
+
+  _clearTx: function() {
+    console.log("clearing transactions");
+    _db__WEBPACK_IMPORTED_MODULE_1__["default"].dbTransactions().remove();
+  },
+
+  _clearAll: function() {
+    this._clearTx();
+    this._clearInvestors();
+  }
+};
+
+
+/***/ }),
+/* 174 */
 /***/ (function(module, exports) {
 
 var _support = _support || { 'ui': {}, 'user': {} };

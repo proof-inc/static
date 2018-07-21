@@ -4,6 +4,7 @@ import Session from '../session';
 import Dialogs from './components/dialogs'
 import Template from "./components/template";
 import DB from './db';
+import Debug from "./debug";
 
 //
 // CONFIG & INIT
@@ -12,7 +13,6 @@ import DB from './db';
 // TODO
 // - KYC welcome name var
 // - psp callbacks
-// - referral stats
 // - kyc callback
 // - token number formatting
 // - anonymous chat?

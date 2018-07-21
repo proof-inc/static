@@ -2,6 +2,7 @@ import Util from '../util';
 import Session from '../session';
 import UI from "./ui";
 import DB from './db';
+import merge from 'deepmerge';
 
 import {BASE_TOKEN_AMOUNT, EURO_PRICE_PER_TOKEN, REFERRAL_PERCENT_FEE} from './constants';
 
@@ -23,9 +24,8 @@ var REFERRAL_TRANSACTIONS = [];
 // timestamp of last investment done
 var LAST_INVESTMENT_TIMESTAMP = null;
 
-// cache of total objects
-var _transactions = null;
-var _investors = null;
+const TRANSACTIONS_STORE_KEY = "_transactions";
+const INVESTORS_STORE_KEY = "_investors";
 
 export default {
 
@@ -43,21 +43,48 @@ export default {
     REFERRAL_TRANSACTIONS = [];
   },
 
+  _storeObject: function(key, value, _default) {
+    localStorage.setItem(key, JSON.stringify(value || _default));
+  },
+
+  _retrieveObject: function(key) {
+    return JSON.parse(localStorage.getItem(key));
+  },
+
   setTransactions: function(tx) {
-    this._transactions = tx;
+    this._storeObject(TRANSACTIONS_STORE_KEY, tx, {});
     this.parseTransactions();
   },
 
+  addTransaction: function(tx, txId) {
+    var oldTx = this.getTransactions();
+    var newTx = {}; newTx[txId] = tx;
+    this._storeObject(TRANSACTIONS_STORE_KEY, merge(oldTx, newTx), {});
+    this.parseTransaction(tx);
+  },
+
+  getTransactions: function() {
+    return this._retrieveObject(TRANSACTIONS_STORE_KEY) || {};
+  },
+
   setInvestors: function(investors) {
-    this._investors = investors;
+    this._storeObject(INVESTORS_STORE_KEY, investors, {});
     this.parseInvestors();
+  },
+
+  getInvestors: function() {
+    return this._retrieveObject(INVESTORS_STORE_KEY) || {};
+  },
+
+  getInvestor: function(id) {
+    return this.getInvestors()[id];
   },
 
   parseInvestors: function() {
     console.log("parsing investors");
     this.resetInvestors();
     var refIds = [], that = this;
-    $.each(this._investors, function(investorId, investor) {
+    $.each(this.getInvestors(), function(investorId, investor) {
       if (that.parseInvestor(investorId, investor)) { // if this investor is a referral
         console.log("referral investor found: ", investorId);
         refIds.push(investorId);
@@ -109,7 +136,7 @@ export default {
     }
   },
 
-  parseSingleTransaction: function(tx) {
+  parseSingleTransaction: function(tx, txId) {
     this.parseTransaction(tx);
     UI.update();
   },
@@ -119,7 +146,7 @@ export default {
     console.log("parsing transactions");
     this.resetTransactions();
     var that = this;
-    $.each(this._transactions, function(key, tx){
+    $.each(this.getTransactions(), function(key, tx){
       that.parseTransaction(tx);
     });
     UI.update();
@@ -209,9 +236,13 @@ export default {
     return REFERRAL_TRANSACTIONS;
   },
 
+  getInvestorBalances: function() {
+    return INVESTOR_BALANCES;
+  },
+
   getInvestorBalance: function(investorId) {
     this.initInvestorBalanceEntry(investorId);
-    return INVESTOR_BALANCES[investorId];
+    return this.getInvestorBalances()[investorId];
   },
 
   getReferralInvestorIds: function() {
@@ -223,7 +254,7 @@ export default {
       return jQuery.extend(true, {
         id: investorId,
         euroAmount: this.getInvestorBalance(investorId)
-      }, (_investors || {})[investorId]);
+      }, this.getInvestor(investorId));
     }, this);
   },
 

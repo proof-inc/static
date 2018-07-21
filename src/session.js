@@ -128,6 +128,10 @@ function isCurrentUser(id) {
   return id == getUserId();
 }
 
+function connection() {
+  return firebase;
+}
+
 function getUserId() {
   return localStorage.getItem('user_id');
 }
@@ -188,6 +192,6 @@ function redirectToDashboardOnLogout() {
 
 export default {
   onLogin, onLogout, login, logout, redirectToDashboardOnLogout,
-  db, dbEnv, isAuthenticated, isCurrentUser,
+  db, dbEnv, isAuthenticated, isCurrentUser, connection,
   getUserId, getUserIdHash, getEmail, getName, getAvatar
 };

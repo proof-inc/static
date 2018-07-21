@@ -233,6 +233,10 @@ function isCurrentUser(id) {
   return id == getUserId();
 }
 
+function connection() {
+  return firebase_app__WEBPACK_IMPORTED_MODULE_0___default.a;
+}
+
 function getUserId() {
   return localStorage.getItem('user_id');
 }
@@ -293,7 +297,7 @@ function redirectToDashboardOnLogout() {
 
 /* harmony default export */ __webpack_exports__["default"] = ({
   onLogin, onLogout, login, logout, redirectToDashboardOnLogout,
-  db, dbEnv, isAuthenticated, isCurrentUser,
+  db, dbEnv, isAuthenticated, isCurrentUser, connection,
   getUserId, getUserIdHash, getEmail, getName, getAvatar
 });
 
