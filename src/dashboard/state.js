@@ -198,7 +198,7 @@ export default {
   },
 
   numTokenBonusBalance: function() {
-    return this.tokenBonusAmount(this.numTokenBalance());
+    return this.tokenBonusAmount(this.numTokenBalance(), this.numTokensSold());
   },
 
   numReferralSignups: function() {
