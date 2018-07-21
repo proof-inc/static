@@ -7,11 +7,10 @@ function bindTemplateData() {
   registerLogoutListener();
   bindWelcomeName();
   bindKYCFormEmail();
-  Referrals.init();
 }
 
-function updateReferrals() {
-  Referrals.update();
+function update() {
+
 }
 
 function registerLogoutListener() {
@@ -31,4 +30,4 @@ function bindKYCFormEmail() {
   );
 }
 
-export default {bindTemplateData, updateReferrals};
+export default {bindTemplateData, update};

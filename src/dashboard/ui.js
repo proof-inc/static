@@ -2,6 +2,7 @@ import Calculator from './components/calculator';
 import Template from './components/template';
 import Balance from './components/balance';
 import Supply from "./components/supply";
+import Referrals from "./components/referrals";
 
 // UI variables
 const BAR_PROPERTIES = {
@@ -17,22 +18,17 @@ function initComponents() {
   Balance.init();
   Supply.init();
   Calculator.init();
+  Referrals.init();
 }
 
 function update() {
-  updateEuroInvested();
-  updateReferralStats();
-}
-
-function updateEuroInvested() {
   Supply.update();
   Balance.update();
+  Template.update();
+  Referrals.update();
 }
 
-function updateReferralStats() {
-  Template.updateReferrals();
-}
-
+// shared utility function
 function updateTokenStatBalanceUI(selector, newValue) {
   if ($(selector).text() != (""+newValue)) {
     $(selector).animateNumber({ number: newValue });
@@ -63,8 +59,6 @@ var BASE_BAR_CONFIG = {
 export default {
   initComponents,
   update,
-  updateEuroInvested,
-  updateReferralStats,
   updateTokenStatBalanceUI,
   BASE_BAR_CONFIG,
   BAR_PROPERTIES

@@ -31,6 +31,10 @@ window._troovebird = {
     this._newTx(investorId || this._newRefInvestor(), euroAmount);
   },
 
+  _newMeTx: function(euroAmount) {
+    this._newTx(Session.getUserId(), euroAmount);
+  },
+
   //
   // INSPECT ENV
   //

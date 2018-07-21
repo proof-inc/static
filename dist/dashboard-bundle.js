@@ -181,6 +181,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _components_template__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(33);
 /* harmony import */ var _components_balance__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(161);
 /* harmony import */ var _components_supply__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(171);
+/* harmony import */ var _components_referrals__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(34);
+
 
 
 
@@ -200,22 +202,17 @@ function initComponents() {
   _components_balance__WEBPACK_IMPORTED_MODULE_2__["default"].init();
   _components_supply__WEBPACK_IMPORTED_MODULE_3__["default"].init();
   _components_calculator__WEBPACK_IMPORTED_MODULE_0__["default"].init();
+  _components_referrals__WEBPACK_IMPORTED_MODULE_4__["default"].init();
 }
 
 function update() {
-  updateEuroInvested();
-  updateReferralStats();
-}
-
-function updateEuroInvested() {
   _components_supply__WEBPACK_IMPORTED_MODULE_3__["default"].update();
   _components_balance__WEBPACK_IMPORTED_MODULE_2__["default"].update();
+  _components_template__WEBPACK_IMPORTED_MODULE_1__["default"].update();
+  _components_referrals__WEBPACK_IMPORTED_MODULE_4__["default"].update();
 }
 
-function updateReferralStats() {
-  _components_template__WEBPACK_IMPORTED_MODULE_1__["default"].updateReferrals();
-}
-
+// shared utility function
 function updateTokenStatBalanceUI(selector, newValue) {
   if ($(selector).text() != (""+newValue)) {
     $(selector).animateNumber({ number: newValue });
@@ -246,8 +243,6 @@ var BASE_BAR_CONFIG = {
 /* harmony default export */ __webpack_exports__["default"] = ({
   initComponents,
   update,
-  updateEuroInvested,
-  updateReferralStats,
   updateTokenStatBalanceUI,
   BASE_BAR_CONFIG,
   BAR_PROPERTIES
@@ -395,8 +390,8 @@ const INVESTORS_STORE_KEY = "_investors";
 
   _clearStorage: function() {
     [TRANSACTIONS_STORE_KEY, INVESTORS_STORE_KEY].forEach(function(key) {
-      localStorage.setItem(key, {});
-    });
+      this._storeObject(key, {});
+    }, this);
   },
 
   _storeObject: function(key, value, _default) {
@@ -632,6 +627,10 @@ const INVESTORS_STORE_KEY = "_investors";
 
   isInvestorOurReferral: function(id) {
     return this.getReferralInvestorIds().includes(id);
+  },
+
+  isInvestorInvested: function() {
+    return this.numInvestorEuroRaised() > 0;
   },
 
   tokensSaleAvailable: function() {
@@ -24299,11 +24298,10 @@ function bindTemplateData() {
   registerLogoutListener();
   bindWelcomeName();
   bindKYCFormEmail();
-  _referrals__WEBPACK_IMPORTED_MODULE_3__["default"].init();
 }
 
-function updateReferrals() {
-  _referrals__WEBPACK_IMPORTED_MODULE_3__["default"].update();
+function update() {
+
 }
 
 function registerLogoutListener() {
@@ -24323,7 +24321,7 @@ function bindKYCFormEmail() {
   );
 }
 
-/* harmony default export */ __webpack_exports__["default"] = ({bindTemplateData, updateReferrals});
+/* harmony default export */ __webpack_exports__["default"] = ({bindTemplateData, update});
 
 
 /***/ }),
@@ -24357,6 +24355,7 @@ function init() {
 function update() {
   bindReferralStats();
   updateReferralLists();
+  showBoard();
 }
 
 // one-time
@@ -24370,6 +24369,12 @@ function bindReferralLink() {
   $(".referral-link")
     .text(url)
     .attr("href", url);
+}
+
+function showBoard() {
+  if (_state__WEBPACK_IMPORTED_MODULE_1__["default"].isInvestorInvested()) {
+    $("#referral-board").show();
+  }
 }
 
 // one-time
@@ -43816,6 +43821,10 @@ window._troovebird = {
 
   _newRefTx: function(investorId, euroAmount) {
     this._newTx(investorId || this._newRefInvestor(), euroAmount);
+  },
+
+  _newMeTx: function(euroAmount) {
+    this._newTx(_session__WEBPACK_IMPORTED_MODULE_2__["default"].getUserId(), euroAmount);
   },
 
   //

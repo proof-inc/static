@@ -48,8 +48,8 @@ export default {
 
   _clearStorage: function() {
     [TRANSACTIONS_STORE_KEY, INVESTORS_STORE_KEY].forEach(function(key) {
-      localStorage.setItem(key, {});
-    });
+      this._storeObject(key, {});
+    }, this);
   },
 
   _storeObject: function(key, value, _default) {
@@ -285,6 +285,10 @@ export default {
 
   isInvestorOurReferral: function(id) {
     return this.getReferralInvestorIds().includes(id);
+  },
+
+  isInvestorInvested: function() {
+    return this.numInvestorEuroRaised() > 0;
   },
 
   tokensSaleAvailable: function() {

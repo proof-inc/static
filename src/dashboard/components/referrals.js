@@ -17,6 +17,7 @@ function init() {
 function update() {
   bindReferralStats();
   updateReferralLists();
+  showBoard();
 }
 
 // one-time
@@ -30,6 +31,12 @@ function bindReferralLink() {
   $(".referral-link")
     .text(url)
     .attr("href", url);
+}
+
+function showBoard() {
+  if (State.isInvestorInvested()) {
+    $("#referral-board").show();
+  }
 }
 
 // one-time
